@@ -14,7 +14,7 @@
     <!-- data for scheme -->
     <script src="{{ url_for('static', filename='js/scheme-data.js')  }}"></script>
 
-    
+
     <style>
         .canvas-holder {
             width: 100%;
@@ -40,6 +40,7 @@
 <body>
 <div class="container" style="max-width: 800px;">
     <div style="text-align: center;">
+        {# todo всталяем название зала, где будет концерт #}
         <h2>Hall scheme example</h2>
 
         <div style="position: relative;">
@@ -83,6 +84,21 @@
     </div>
 </div>
 <script>
+    {# инициализация бота #}
+    const bot = window.Telegram.WebApp;
+    if (localStorage.fl === undefined) {
+        localStorage.clear()
+        localStorage.fl = false
+        }
+    if (localStorage.uid === undefined) {
+        localStorage.uid = bot.initDataUnsafe.user.id
+    }
+    const uid = localStorage.uid
+    bot.MainButton.setParams({
+        'text': "Купить билеты",
+        'color': '#218555',
+    })
+
     var backgroundLayer = new SchemeDesigner.Layer('background', {zIndex: 0, visible: false, active: false});
     var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 10});
 
@@ -108,7 +124,7 @@
         var isHovered = schemeObject.isHovered && !SchemeDesigner.Tools.touchSupported();
 
         context.fillStyle = backgroundColor;
-		
+
         if (objectParams.isSelected && isHovered) {
             context.strokeStyle = backgroundColor;
         } else if (isHovered) {
@@ -130,7 +146,7 @@
             width = width - (borderOffset * 2);
             height = height - (borderOffset * 2);
         }
-		
+
         var halfWidth = width / 2;
         var halfHeight = height / 2;
 

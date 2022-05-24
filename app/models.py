@@ -165,3 +165,29 @@ class Tag(db.Model):
     name = db.Column(db.String(30), index=True)
     description = db.Column(db.String(128), index=True)
 
+
+class Account(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    # юр наименоование
+    # адрес
+    # инн
+    #
+
+
+class Event(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    # название,
+    # описание,
+    # афиша - картинки и видео {'file_id':'sdfgsdg', 'file_type': 'photo/video', 'filename': 'name'}
+    # Организатор - внешний ключ Account
+    # площадка - внешний ключ Place
+    # размещение -  внешний ключ Placement
+
+# Place
+# название
+# город
+# адрес
+
+# Placement
+# площадка - внешний ключ на Place
+# placement - файл js с местами

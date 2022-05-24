@@ -1,0 +1,10 @@
+.env
+.idea/
+__pycache__/
+app/__pycache__/
+app/admin/__pycache__/
+app/auth/__pycache__/
+app/main/__pycache__/
+app/telegram_bot/__pycache__/
+migrations/
+venv/
