@@ -41,7 +41,3 @@ class Config(object):
     # MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     # MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
 
-    # lotto
-    # LOTTO_URL = 'https://lotto.idurn.ru/api'
-    # LOTTO_USER = '1'
-    # LOTTO_API_TOKEN = '123'
