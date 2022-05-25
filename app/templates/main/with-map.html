@@ -13,6 +13,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- data for scheme -->
     <script src="{{ url_for('static', filename='js/scheme-data.js')  }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 
 
     <style>
@@ -41,7 +42,7 @@
 <div class="container" style="max-width: 800px;">
     <div style="text-align: center;">
         {# todo всталяем название зала, где будет концерт #}
-        <h2>Hall scheme example</h2>
+        <h2>Название зала</h2>
 
         <div style="position: relative;">
             <div class="canvas-holder" style="">
@@ -85,7 +86,8 @@
 </div>
 <script>
     {# инициализация бота #}
-    const bot = window.Telegram.WebApp;
+    const bot = Telegram.WebApp;
+    console.log(bot)
     if (localStorage.fl === undefined) {
         localStorage.clear()
         localStorage.fl = false
@@ -94,10 +96,33 @@
         localStorage.uid = bot.initDataUnsafe.user.id
     }
     const uid = localStorage.uid
+    console.log(uid)
     bot.MainButton.setParams({
         'text': "Купить билеты",
         'color': '#218555',
     })
+    bot.ready();
+    bot.MainButton.show().onClick(function () {
+        const data = JSON.stringify({hex: 123, rgb: 25252});
+
+        (async () => {
+            const rawResponse = await fetch('{{  server  }}/webappresponse', {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({a: 1, b: 'Textual content'})
+          });
+          const content = await rawResponse.json();
+
+          console.log(content);
+        })();
+
+        bot.close();
+    });
+
+
 
     var backgroundLayer = new SchemeDesigner.Layer('background', {zIndex: 0, visible: false, active: false});
     var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 10});

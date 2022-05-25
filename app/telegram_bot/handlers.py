@@ -1,12 +1,12 @@
-from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
+import json
+from app.models import User, Event
+from telegram import Update, WebAppInfo, InlineKeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, \
+    ReplyKeyboardRemove, KeyboardButton
 
 from config import Config
 from app.telegram_bot.helpers import with_app_context
 from telegram.ext import CallbackContext
 from telegram.constants import ParseMode
-
-# Define a few command handlers. These usually take the two arguments update and
-# context.
 
 
 @with_app_context
@@ -18,32 +18,83 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
 
 @with_app_context
-async def help_command(update, context):
-    """Send a message when the command /help is issued."""
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text='Help',
-    )
-
-
-@with_app_context
 async def echo(update: Update, context: CallbackContext.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=update.message.text)
 
 
+@with_app_context
+async def help_command(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    chat_id = int(update.message.from_user.id)
+    message_id = int(update.message.message_id)
+    sender: User = User.query.filter(User.tg_id == chat_id).first()
+
+    await update.message.delete()
+
+    confirm_btn = InlineKeyboardButton(text='Да, помощь нужна', callback_data='help')
+    cancel_btn = InlineKeyboardButton(text='Нет, помощь не нужна', callback_data='deleteMessage')
+
+    keyboard = [[confirm_btn], [cancel_btn]]
+
+    await update.message.reply_text(text='🆘 Вы нажали кнопку помощи 🆘.\n\nЗачастую её нажимают просто так. А обработка каждого запроса требует времени.\n\n*Вам действительно нужна наша помощь?*',
+                              reply_markup=InlineKeyboardMarkup(keyboard),
+                              parse_mode=ParseMode.MARKDOWN)
+
 
 @with_app_context
-async def web(update: Update, context: CallbackContext.DEFAULT_TYPE):
+async def events(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    chat_id = int(update.message.from_user.id)
+    message_id = int(update.message.message_id)
+    sender: User = User.query.filter(User.tg_id == chat_id).first()
+
+    await update.message.delete()
+
+    events: Event = Event.query.order_by(Event.id).all()
+    buttons = []
+    for index, i in enumerate(events):
+        text = f'{index + 1}) {i.date} {i.name}'
+        callback = f'event_{i.id}'
+        buttons.append(
+            InlineKeyboardButton(text=text,
+                                 callback_data=callback)
+        )
+
+
+    await update.message.reply_text(
+        text='Список предстоящих концертов:',
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[x] for x in buttons]))
+
+
+@with_app_context
+async def send_event(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    print(update.callback_query.data.split('_')[-1])
+    event: Event = Event.query.get(int(update.callback_query.data.split('_')[-1]))
+    await update.callback_query.delete_message()
+
     btn = [
-        InlineKeyboardButton(text='текст кнопки',
-        web_app=WebAppInfo(url=f'{Config.SERVER}'),
-        )]
+        InlineKeyboardButton(text='Купить билеты',
+                             web_app=WebAppInfo(url=f'{Config.SERVER}'),
+                             )]
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="WebAppTest",
+        text=f"Тут будет афиша",
         reply_markup=InlineKeyboardMarkup([btn]),
         protect_content=True,
         parse_mode=ParseMode.MARKDOWN,
     )
+
+
+@with_app_context
+async def help(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    user = User.query.filter(User.tg_id == update.callback_query.from_user.id).first()
+    print(user)
+    await update.callback_query.delete_message()
+    # texts.help(user)
+
+
+@with_app_context
+async def delete_message(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    await update.callback_query.delete_message()
+
+

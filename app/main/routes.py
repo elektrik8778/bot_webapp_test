@@ -19,12 +19,14 @@ from config import Config
 def index():
     bot_name = Config.BOT_NAME
     title = 'Главная'
+    server = Config.SERVER
     # if request.args:
     #     if 'u' in request.args:
     #         print(request.args['u'])
 
     return render_template('main/with-map.html',
                            bot_name=bot_name,
-                           title=title)
+                           title=title,
+                           server=server)
     # return redirect('/admin')
 

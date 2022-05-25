@@ -176,18 +176,22 @@ class Account(db.Model):
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    # название,
-    # описание,
-    # афиша - картинки и видео {'file_id':'sdfgsdg', 'file_type': 'photo/video', 'filename': 'name'}
-    # Организатор - внешний ключ Account
-    # площадка - внешний ключ Place
-    # размещение -  внешний ключ Placement
+    name = db.Column(db.String(30), index=True)# название,
+    description = db.Column(db.String(120), index=True)# описание,
+    poster = db.Column(db.JSON, default={"files": ""})# афиша - картинки и видео {'file_id':'sdfgsdg', 'file_type': 'photo/video', 'filename': 'name'}
+    sponsor = db.Column(db.Integer, db.ForeignKey('account.id'))# Организатор - внешний ключ Account
+    place = db.Column(db.Integer, db.ForeignKey('place.id'))# площадка - внешний ключ Place
+    placement = db.Column(db.Integer, db.ForeignKey('placement.id'))# размещение -  внешний ключ Placement
+    date = db.Column(db.DateTime)
 
-# Place
-# название
-# город
-# адрес
 
-# Placement
-# площадка - внешний ключ на Place
-# placement - файл js с местами
+class Place(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(30), index=True)# название
+    toun = db.Column(db.String(30), index=True)# город
+    addr = db.Column(db.String(30), index=True)# адрес
+
+class Placement(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    place = db.Column(db.Integer, db.ForeignKey('place.id'))# площадка - внешний ключ на Place
+    # placement - файл js с местами
