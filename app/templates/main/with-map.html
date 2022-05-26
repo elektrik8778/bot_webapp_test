@@ -87,7 +87,9 @@
 <script>
     {# инициализация бота #}
     const bot = Telegram.WebApp;
-    console.log(bot)
+
+    var choose_places = new Map([]);
+
     if (localStorage.fl === undefined) {
         localStorage.clear()
         localStorage.fl = false
@@ -101,9 +103,8 @@
         'text': "Купить билеты",
         'color': '#218555',
     })
-    bot.ready();
-    bot.MainButton.show().onClick(function () {
-        const data = JSON.stringify({hex: 123, rgb: 25252});
+
+    bot.MainButton.onClick(function () {
 
         (async () => {
             const rawResponse = await fetch('{{  server  }}/webappresponse', {
@@ -112,10 +113,11 @@
                   'Accept': 'application/json',
                   'Content-Type': 'application/json'
             },
-            body: JSON.stringify({a: 1, b: 'Textual content'})
+
+            body: JSON.stringify(Object.fromEntries(choose_places))
           });
           const content = await rawResponse.json();
-
+          console.log(obj);
           console.log(content);
         })();
 
@@ -245,6 +247,7 @@
     {
         var objectParams = schemeObject.getParams();
         objectParams.isSelected = !objectParams.isSelected;
+        console.log(e.objectParams)
     };
 
     /**
@@ -376,7 +379,18 @@
     }, false);
 
     canvas.addEventListener('schemeDesigner.clickOnObject', function (e) {
-        console.log('clickOnObject', e.detail);
+        console.log('clickOnObject', e.detail.params.id);
+        let placeId = e.detail.params.id
+        let placePrice = e.detail.params.price
+        choose_places.set(placeId, placePrice);
+        bot.MainButton.setParams({
+                'text': "Купить места",
+                'color': '#00ff00',
+                'text_color': '#ffffff',
+                'is_active': true,
+                'is_visible': true
+            })
+        bot.MainButton.show()
     }, false);
 
     canvas.addEventListener('schemeDesigner.mouseOverObject', function (e) {
