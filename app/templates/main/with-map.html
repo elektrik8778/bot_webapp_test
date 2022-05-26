@@ -87,7 +87,7 @@
 <script>
     {# инициализация бота #}
     const bot = Telegram.WebApp;
-
+    var total_price = 0;
     var choose_places = new Map([]);
 
     if (localStorage.fl === undefined) {
@@ -99,10 +99,6 @@
     }
     const uid = localStorage.uid
     console.log(uid)
-    bot.MainButton.setParams({
-        'text': "Купить билеты",
-        'color': '#218555',
-    })
 
     bot.MainButton.onClick(function () {
 
@@ -117,8 +113,8 @@
             body: JSON.stringify(Object.fromEntries(choose_places))
           });
           const content = await rawResponse.json();
-          console.log(obj);
-          console.log(content);
+<!--          console.log(obj);-->
+<!--          console.log(content);-->
         })();
 
         bot.close();
@@ -381,10 +377,11 @@
     canvas.addEventListener('schemeDesigner.clickOnObject', function (e) {
         console.log('clickOnObject', e.detail.params.id);
         let placeId = e.detail.params.id
-        let placePrice = e.detail.params.price
+        let placePrice = parseInt(e.detail.params.price, 10);
+        total_price += placePrice;
         choose_places.set(placeId, placePrice);
         bot.MainButton.setParams({
-                'text': "Купить места",
+                'text': total_price.toString(),
                 'color': '#00ff00',
                 'text_color': '#ffffff',
                 'is_active': true,
