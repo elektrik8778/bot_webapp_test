@@ -24,7 +24,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     USERS_PER_PAGE = 20
-    UPLOAD_FOLDER = os.path.join(basedir, 'app', 'app/static', 'uploads')
+    UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'uploads')
     STATIC_FOLDER = os.path.join(basedir, 'app', 'app/static')
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'ogg', 'mp4', 'avi'}
     SERVER_TIME_ZONE = os.environ.get('SERVER_TIME_ZONE') or 0

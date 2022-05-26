@@ -1,7 +1,9 @@
 import json
+import os
+
 from app.models import User, Event
 from telegram import Update, WebAppInfo, InlineKeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, \
-    ReplyKeyboardRemove, KeyboardButton
+    ReplyKeyboardRemove, KeyboardButton, InputMediaVideo, InputMediaPhoto
 
 from config import Config
 from app.telegram_bot.helpers import with_app_context
@@ -70,15 +72,29 @@ async def events(update: Update, context: CallbackContext.DEFAULT_TYPE):
 async def send_event(update: Update, context: CallbackContext.DEFAULT_TYPE):
     print(update.callback_query.data.split('_')[-1])
     event: Event = Event.query.get(int(update.callback_query.data.split('_')[-1]))
-    await update.callback_query.delete_message()
 
+    poster = event.poster
+    print(poster)
+    media_group = []
+    # await update.callback_query.delete_message()
+    media = open(os.path.join(Config.UPLOAD_FOLDER, 'events', str(event.id), poster['filename']), 'rb')
+    if 'photo' in poster['file_type']:
+        media_group.append(InputMediaPhoto(media=media,
+                                           caption=event.description,
+                                           parse_mode=ParseMode.MARKDOWN)
+                           )
     btn = [
         InlineKeyboardButton(text='Купить билеты',
                              web_app=WebAppInfo(url=f'{Config.SERVER}'),
                              )]
+    await update.effective_message.reply_media_group(media=media_group,
+                                                     protect_content=True,
+                                                     )
+
+
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"Тут будет афиша",
+        text=f"Купить билеты",
         reply_markup=InlineKeyboardMarkup([btn]),
         protect_content=True,
         parse_mode=ParseMode.MARKDOWN,
