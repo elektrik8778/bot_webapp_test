@@ -87,7 +87,7 @@
 <script>
     {# инициализация бота #}
     const bot = Telegram.WebApp;
-    var total_price = 0;
+
     var choose_places = new Map([]);
 
     if (localStorage.fl === undefined) {
@@ -375,11 +375,21 @@
     }, false);
 
     canvas.addEventListener('schemeDesigner.clickOnObject', function (e) {
-        console.log('clickOnObject', e.detail.params.id);
+        // console.log('clickOnObject', e.detail.params.id);
+        var total_price = 0;
         let placeId = e.detail.params.id
         let placePrice = parseInt(e.detail.params.price, 10);
-        total_price += placePrice;
-        choose_places.set(placeId, placePrice);
+
+        if (choose_places.has(placeId)) {
+            choose_places.delete(placeId);
+        } else {
+            choose_places.set(placeId, placePrice);
+        };
+
+        choose_places.forEach(value => {
+                        total_price += value;
+        });
+
         bot.MainButton.setParams({
                 'text': total_price.toString(),
                 'color': '#00ff00',
