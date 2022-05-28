@@ -70,11 +70,8 @@ async def events(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
 @with_app_context
 async def send_event(update: Update, context: CallbackContext.DEFAULT_TYPE):
-    print(update.callback_query.data.split('_')[-1])
     event: Event = Event.query.get(int(update.callback_query.data.split('_')[-1]))
-
     poster = event.poster
-    print(poster)
     media_group = []
     # await update.callback_query.delete_message()
     media = open(os.path.join(Config.UPLOAD_FOLDER, 'events', str(event.id), poster['filename']), 'rb')
