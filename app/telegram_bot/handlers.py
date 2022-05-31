@@ -3,7 +3,7 @@ import os
 
 from app.models import User, Event
 from telegram import Update, WebAppInfo, InlineKeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, \
-    ReplyKeyboardRemove, KeyboardButton, InputMediaVideo, InputMediaPhoto
+    ReplyKeyboardRemove, KeyboardButton, InputMediaVideo, InputMediaPhoto, LabeledPrice
 
 from config import Config
 from app.telegram_bot.helpers import with_app_context
@@ -111,3 +111,20 @@ async def delete_message(update: Update, context: CallbackContext.DEFAULT_TYPE):
     await update.callback_query.delete_message()
 
 
+
+async def send_pay(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
+    prices = [LabeledPrice(label='Концерт', amount=int(5 * 10000))]
+    need_phone_number = False
+    if not user.phone:
+        need_phone_number = True
+    await update.effective_message.reply_invoice(title='name',
+                                           description='описание',
+                                           payload=str(2),
+                                           provider_token=('284685063:TEST:MTlkMTA0NDBkM2U0'),
+                                           currency='RUB',
+                                           prices=prices,
+                                           protect_content=True,
+                                           need_phone_number=need_phone_number,
+                                           max_tip_amount=40000,
+                                           suggested_tip_amounts=[19900, 29900, 39900])
