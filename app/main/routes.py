@@ -13,7 +13,7 @@ from datetime import datetime
 from config import Config
 
 
-
+@bp.route('/categories')
 @bp.route('/', methods=['GET', 'POST'])
 # @login_required
 def index():

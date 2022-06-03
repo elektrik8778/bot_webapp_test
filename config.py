@@ -25,7 +25,7 @@ class Config(object):
 
     USERS_PER_PAGE = 20
     UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'uploads')
-    STATIC_FOLDER = os.path.join(basedir, 'app', 'app/static')
+    STATIC_FOLDER = os.path.join(basedir, 'app', 'static')
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'ogg', 'mp4', 'avi'}
     SERVER_TIME_ZONE = os.environ.get('SERVER_TIME_ZONE') or 0
     BOT_NAME = os.environ.get('BOT_NAME')

@@ -13,6 +13,7 @@ application.add_handler(CommandHandler('start', handlers.start))
 application.add_handler(CommandHandler('help', handlers.help_command))
 application.add_handler(CommandHandler('events', handlers.events))
 application.add_handler(CommandHandler('ppay', handlers.send_pay))
+application.add_handler(CommandHandler('placement', callback=handlers.create_placement))
 
 application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handlers.echo))
 
@@ -20,6 +21,7 @@ application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle
 application.add_handler(CallbackQueryHandler(pattern='help', callback=handlers.help))
 application.add_handler(CallbackQueryHandler(pattern='deleteMessage', callback=handlers.delete_message))
 application.add_handler(CallbackQueryHandler(pattern='event', callback=handlers.send_event))
+
 
 
 # payments
