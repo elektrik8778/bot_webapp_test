@@ -1,0 +1,254 @@
+html,
+body {
+  /*background: url("/static/images/main_background.jpg");*/
+  background-size: cover;
+  box-sizing: border-box;
+  font-family: 'Montserrat', sans-serif;
+}
+
+html {
+  position: relative;
+}
+
+.navbar {
+  background-color: #87bfff;
+  /*color: #87bfff;*/
+}
+
+.navbar img {
+  max-width:150px;
+  margin: 10% 0 10% 0;
+}
+
+.round {
+  background: red;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+}
+
+.stream-container {
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 15px 5px;
+  margin-bottom: 1%;
+}
+
+.stream-btn {
+  margin: 0 1% 0 1%!important;
+  font-size: small;
+  border: none;
+  border-radius: 30px;
+  background-color: rgb(255, 0, 0);
+  /*opacity: 0.6;*/
+  color: white!important;
+  padding: 10px;
+}
+
+.login-btn {
+  white-space: nowrap;
+  font-size: small;
+  border: none;
+  border-radius: 10px;
+  background-color: rgb(255, 0, 0);
+  /*opacity: 0.6;*/
+  color: white!important;
+  padding: 10px;
+}
+
+.btn-center {
+  position: relative;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+
+.stream-btn:hover, .login-btn:hover {
+  background-color: rgb(200, 89, 49);
+}
+
+.speaker {
+  padding-left: 2%;
+  margin-bottom: 2%;
+}
+
+.speaker > img {
+  border-radius: 50%;
+  width: 20%;
+  height: 20%;
+}
+
+.event-name-container {
+  color: white;
+  vertical-align: center;
+}
+.event-logo {
+  max-height: 80px;
+}
+
+.event-text {
+  margin-left: 10px;
+  font-family: Montserrat, serif;
+}
+
+.event-name {
+  font-size: 1em;
+  margin: 0;
+  padding: 0;
+  font-family: Montserrat, serif;
+}
+
+.event-descr {
+  font-family: Montserrat, serif;
+  font-size: 1em;
+  margin: 0;
+  padding: 0;
+}
+
+.green-text {
+  color: rgb(195, 212, 101);
+}
+
+.white-text {
+  color: white;
+}
+
+#text_background {
+  background-color: rgba(3, 21, 54, 0.3);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.bold {
+  font-family: Montserrat, serif;
+  font-weight: bold;
+}
+
+.event-info-h {
+  font-size: 2em;
+  line-height: 1em;
+  font-family: Montserrat, serif;
+  font-weight: bold;
+}
+
+.large-p {
+  font-size: 1.5em;
+  /*line-height: 1em;*/
+  font-family: Montserrat, serif;
+}
+
+#logo-shadow {
+  max-width: 100%;
+}
+
+footer {
+  background-color: rgba(34, 81, 66, 0.8);
+  padding: 15px 0 0 15px;
+  font-family: Montserrat, serif;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 10vh;
+}
+
+.partners {
+  height: 60%;
+  width: 100%;
+}
+
+footer ul {
+  list-style-type: none;
+}
+
+footer ul li:before {
+  content: '-';
+  margin-right: 5px;
+}
+
+footer h3 {
+  color: rgb(5, 68, 116);
+  font-size: 1em;
+}
+
+.send-socket-message {
+  background-color: white;
+  border: none;
+  border-radius: 30px;
+}
+
+.send-socket-message:hover {
+  background-color: rgba(65, 166, 235, 0.515);
+}
+
+.separator {
+  background-color: white;
+  border-right: 3px solid rgb(98, 183, 240);
+}
+
+#socket-message-text {
+  border: none;
+  border-radius: 30px 0 0 30px;
+}
+
+.modal-content {
+  border-radius: 10px;
+  background-color: rgb(65, 166, 235);
+}
+
+@media screen and (max-width: 980px) {
+  body{
+    background-size: cover;
+  }
+
+  #text_background {
+    background-color: rgba(3, 21, 54, 0.4);
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+
+  main {
+    margin: 0!important;
+  }
+
+  .navbar {
+  margin-bottom: 20px;
+  background-color: rgba(3, 21, 54, 0.7);
+  height: 20%;
+  }
+
+  .event-info-h{
+    font-size: .5em;
+  }
+
+  #stream {
+    height: 30%;
+  }
+
+
+
+  footer{
+    position: relative;
+    display: none;
+    height: 30vh;
+  }
+
+  p, span {
+    font-size: .8em!important;
+    text-align: left;
+  }
+
+  .stream-btn {
+    display: block;
+    margin-top: 5px!important;
+  }
+}
+
+@media screen and (max-width: 1112px) {
+  .rtm-h {
+    font-size: 2em;
+  }
+
+  .stream-btn {
+    display: block;
+  }
+}

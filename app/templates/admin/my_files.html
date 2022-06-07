@@ -1,0 +1,19 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block content %}
+    <div>
+        <h3>Файлы</h3>
+        <a class="btn btn-success" href="{{ url_for('admin.download_folder', filename=filename) }}">
+            Скачать из папки все файлы
+        </a>
+        <ol>
+        {% for file in files %}
+            {% if file %}
+                <li><a href="{{ url_for('admin.uploads', filename=filename+'/'+file) }}" class="btn btn-link">{{ file }}</a></li>
+            {% else %}
+                <li><a href="{{ url_for('admin.uploads', filename=filename) }}" class="btn btn-link">{{ file }}</a></li>
+            {% endif %}
+        {% endfor %}
+        </ol>
+    </div>
+{% endblock %}

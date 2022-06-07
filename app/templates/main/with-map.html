@@ -5,7 +5,7 @@
     <title>Example</title>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css')  }}">
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
 <!--    <script src="../dist/scheme-designer.min.js?24"></script>-->
@@ -17,6 +17,40 @@
 
 
     <style>
+
+        .fbox {
+            $size: 10rem;
+            display: flex;
+
+            &-aside {
+                display: block;
+                width: $size;
+            }
+
+              &-content {
+                flex: 1;
+              }
+
+          &_colors &-aside {
+            background-color: #5e2750;
+            color: white;
+            padding: 1rem;
+            font-size: 1.5rem;
+            min-height: 10rem;
+            font-weight: 700;
+          }
+
+          &_colors &-content {
+            background-color: #f08763;
+            color: white;
+            padding: 1rem;
+            font-size: 1.5rem;
+            min-height: 20rem;
+            font-weight: 700;
+          }
+        }
+
+
         .canvas-holder {
             width: 100%;
             height: 500px;
@@ -39,10 +73,63 @@
     </style>
 </head>
 <body>
-<div class="container" style="max-width: 800px;">
-    <div style="text-align: center;">
-        {# todo всталяем название зала, где будет концерт #}
-        <h2>Название зала</h2>
+<div class="container-fluid">
+
+
+        <div style="text-align: center;">
+            <section class="sticky-top">
+            {# todo всталяем название зала, где будет концерт #}
+            <h2>Название зала</h2>
+
+            </section>
+                <div class="fbox fbox_colors">
+                  <div class="fbox-aside">
+                    Fixed
+                  </div>
+                  <div class="fbox-content">
+                    Adaptive
+                  </div>
+            </div>
+        </div>
+
+
+
+<!--    <div style="text-align: center;">-->
+    <div>
+
+
+    <div class="sticky-top">
+        <div class="well">
+            <div class="row">
+                <div class="col-sm-6" style="margin-bottom: 5px;">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(10)">+</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(-10)">-</button>
+                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().showNodesParts()">
+                            Сбросить выбор
+                    </button>
+                </div>
+
+                <div class="col-sm-6" style="margin-bottom: 5px;">
+                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().showNodesParts()">
+                        Show grid
+                    </button>
+                </div>
+
+<!--                <div class="col-sm-2" style="margin-bottom: 5px;">-->
+<!--                    <button type="button" class="btn btn-info btn-sm" onclick="schemeDesigner.getScrollManager().toCenter(); schemeDesigner.requestRenderAll();">-->
+<!--                        Scroll to center-->
+<!--                    </button>-->
+<!--                </div>-->
+
+<!--                <div class="col-sm-2" style="margin-bottom: 5px;">-->
+<!--                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().setLayerVisibility('background', !schemeDesigner.getStorageManager().getLayerById('background').isVisible())">-->
+<!--                        Show/hide background-->
+<!--                    </button>-->
+<!--                </div>-->
+
+            </div>
+        </div>
+    </div>
 
         <div style="position: relative;">
             <div class="canvas-holder" style="">
@@ -56,32 +143,10 @@
             </canvas>
             </div>
         </div>
-        <div class="well">
-            <div class="row" >
-                <div class="col-sm-2" style="margin-bottom: 5px;">
-                    <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(10)">+</button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(-10)">-</button>
-                </div>
-                <div class="col-sm-2" style="margin-bottom: 5px;">
-                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().showNodesParts()">
-                        Show grid
-                    </button>
-                </div>
 
-                <div class="col-sm-2">
-                    <button type="button" class="btn btn-info btn-sm" onclick="schemeDesigner.getScrollManager().toCenter(); schemeDesigner.requestRenderAll();">
-                        Scroll to center
-                    </button>
-                </div>
 
-                <div class="col-sm-2" style="margin-bottom: 5px;">
-                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().setLayerVisibility('background', !schemeDesigner.getStorageManager().getLayerById('background').isVisible())">
-                        Show/hide background
-                    </button>
-                </div>
 
-            </div>
-        </div>
+
     </div>
 </div>
 <script>

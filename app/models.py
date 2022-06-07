@@ -147,7 +147,6 @@ class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(30), index=True)
     time_zone = db.Column(db.Integer, default=9)
-    lotto_game_id = db.Column(db.Integer)
     inst = db.Column(db.Text)
     code = db.Column(db.String(10))
     moderators = db.relationship('User',
@@ -195,3 +194,5 @@ class Placement(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     place = db.Column(db.Integer, db.ForeignKey('place.id'))# площадка - внешний ключ на Place
     # placement - файл js с местами
+
+
