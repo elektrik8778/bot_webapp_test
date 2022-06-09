@@ -52,5 +52,4 @@ async def telegram():
 async def post_response():
     print('Получено')
     pprint(request.json)
-
     return 'ok'

@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, DateTimeField, IntegerField, TextAreaField, FileField, SelectField, \
     SelectMultipleField, MultipleFileField, BooleanField
 from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, ValidationError
 from app.models import User, Group
 from app import Config
 
@@ -102,3 +102,19 @@ class PrizeForm(FlaskForm):
     description = TextAreaField('Описание')
     pic = FileField('Картинка')
     add = SubmitField('Сохранить')
+
+
+class PlaceForm(FlaskForm):
+    name = StringField('Название', validators=[DataRequired()])
+    description = TextAreaField('Описание')
+    save = SubmitField('Сохранить')
+
+
+class PlacementForm(FlaskForm):
+    name = StringField('Название', validators=[DataRequired()])
+    excel_file = FileField('Загрузить excel', validators=[DataRequired()])
+    save_placement = SubmitField('Сохранить')
+
+    def validate_excel_file(self, excel_file):
+        if excel_file.data.filename.split('.')[-1] != 'xlsx':
+            raise ValidationError('Файл должен быть формата .xlsx')

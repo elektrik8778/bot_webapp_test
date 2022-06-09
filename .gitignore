@@ -8,3 +8,4 @@ app/main/__pycache__/
 app/telegram_bot/__pycache__/
 migrations/
 venv/
+app/static/uploads/placements/

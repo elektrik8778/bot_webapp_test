@@ -1,0 +1,30 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block content %}
+    <div class="container-fluid">
+        <h3>Площадки</h3>
+        <a class="btn btn-outline-success" href="{{ url_for('admin.place_view', pid=0) }}">Добавить новый</a>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>№</th>
+                <th>Название</th>
+                <th>Операции</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for p in places %}
+                <tr>
+                <td>{{ loop.index }}</td>
+                <td><a href="{{ url_for('admin.place_view', pid=p.id) }}">{{ p.name }}</a></td>
+                <td>Варианты рассадок:</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+{% endblock %}

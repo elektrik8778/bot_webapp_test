@@ -4,11 +4,8 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 # from flask_mail import Mail
 from config import Config
-
 import logging
-
 from telegram.ext import ApplicationBuilder
-
 from flask_cors import CORS
 from flask_bootstrap import Bootstrap
 
@@ -22,17 +19,14 @@ login.login_message = u'Пожалуйста, авторизуйтесь, что
 cors = CORS()
 bootstrap = Bootstrap()
 
-
-
 application = ApplicationBuilder().token(Config.TG_TOKEN).build()
-
+bot = application.bot
 
 # Enable logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
 
 
 def create_app(config_class=Config):

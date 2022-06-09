@@ -9,54 +9,15 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('admin.users_list') }}">Все пользователи</a>
             </li>
-<!--            <li class="nav-item">-->
-<!--                <a class="nav-link" href="{{ url_for('admin.tickets') }}">Промокоды</a>-->
-<!--            </li>-->
-<!--            <li class="nav-item">-->
-<!--                <a class="nav-link" href="{{ url_for('admin.lottery_numbers') }}">Номерки для розыгрыша</a>-->
-<!--            </li>-->
-<!--            <li class="nav-item">-->
-<!--                <a class="nav-link" href="{{ url_for('admin.message_schedule') }}">Рассылки</a>-->
-<!--            </li>-->
+            <li class="nav-item">
+               <a class="nav-link" href="{{ url_for('admin.message_schedule') }}">Рассылки</a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('admin.moderation') }}">Модерация групп</a>
             </li>
-<!--            <li class="nav-item dropdown">-->
-<!--                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">-->
-<!--                    Призы-->
-<!--                </a>-->
-<!--                <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">-->
-<!--                    <a class="dropdown-item" href="{{ url_for('admin.prizes') }}">Список призов</a>-->
-<!--                    <a class="dropdown-item" href="{{ url_for('admin.random_lottery_number') }}">Розыгрыш призов</a>-->
-<!--                    <a class="dropdown-item" href="{{ url_for('admin.prizes_accounting') }}">Выдача призов</a>-->
-<!--                </div>-->
-<!--            </li>-->
-{#            <li class="nav-item">#}
-{#                <a class="nav-link" href="{{ url_for('admin.admin_settings') }}">Настройки</a>#}
-{#            </li>#}
-{#            <li>#}
-{#                <a class="nav-link" href="{{ url_for('admin.votings') }}">Голосования</a>#}
-{#            </li>#}
-{#            <li>#}
-{#                <a class="nav-link" href="{{ url_for('admin.get_file_id_form') }}">Получить файл айди</a>#}
-{#            </li>#}
-{#            <li class="nav-item">#}
-{#                <a class="nav-link" href="{{ url_for('admin.user_view_settings') }}">Внешний вид платформы</a>#}
-{#            </li>#}
-{#            <li class="nav-item dropdown">#}
-{#                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">#}
-{#                    Доп функции#}
-{#                </a>#}
-{#                <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">#}
-{#                    <a class="dropdown-item" href="{{ url_for('admin.uploads', filename='*') }}">Файлы</a>#}
-{#                    <a class="dropdown-item" href="{{ url_for('main.marquee') }}" target="_blank">Бегущая строка</a>#}
-{#                    <a class="dropdown-item" href="{{ url_for('main.marquee2') }}" target="_blank">Алерты</a>#}
-{#                    <a class="dropdown-item" href="{{ url_for('main.user_chat') }}" target="_blank">Чат</a>#}
-{#                    <a class="dropdown-item" href="{{ url_for('main.photozone') }}" target="_blank">Фотозона</a>#}
-{#                    <a class="dropdown-item" href="{{ url_for('lotto.lotto') }}" target="_blank">Лото</a>#}
-{#                    <a class="dropdown-item" href="{{ url_for('lotto.marathons') }}" target="_blank">Марафоны</a>#}
-{#                </div>#}
-{#            </li>#}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.places_view') }}">Залы</a>
+            </li>
         </ul>
     </div>
 </nav>

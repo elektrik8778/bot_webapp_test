@@ -13,7 +13,6 @@ from google.oauth2 import service_account
 import os
 
 
-
 @login.user_loader
 def load_user(id):
     return User.query.get(int(id))
@@ -46,7 +45,8 @@ class User(UserMixin, db.Model):
     status = db.Column(db.String(30), index=True, default='')
     role = db.Column(db.String(12), index=True, default='user')
     group = db.Column(db.Integer, db.ForeignKey('group.id'))
-    registered = db.Column(db.DateTime, index=True, nullable=True, default=datetime.now())
+    registered = db.Column(db.DateTime)
+    last_visit = db.Column(db.DateTime)
     unsubscribed = db.Column(db.Boolean, default=False)
     # promo_codes = db.Column(db.JSON)
 
@@ -165,34 +165,88 @@ class Tag(db.Model):
     description = db.Column(db.String(128), index=True)
 
 
+class ScheduledMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    message_type = db.Column(db.String(20), nullable=False)
+    date_time = db.Column(db.DateTime)
+    text = db.Column(db.String(4096), nullable=False)
+    content_link = db.Column(db.String(256), nullable=False)
+    group = db.Column(db.Integer, db.ForeignKey('group.id'))
+    sent = db.Column(db.Boolean, default=False)
+
+    def get_tasks_for_sending(self, sent=False, deleted=False):
+        if sent and not deleted:
+            return TaskForSending.query.filter(TaskForSending.scheduled_message_id == self.id,
+                                               TaskForSending.sent.is_(sent)).all()
+        if sent and deleted:
+            return TaskForSending.query.filter(TaskForSending.scheduled_message_id == self.id,
+                                               TaskForSending.sent.is_(sent),
+                                               TaskForSending.deleted.is_(sent)).all()
+        else:
+            return TaskForSending.query.filter(TaskForSending.task_id == self.id).all()
+
+
+class TaskForSending(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    scheduled_message_id = db.Column(db.Integer, db.ForeignKey('scheduled_message.id', ondelete='CASCADE'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+    plan_sending_time = db.Column(db.DateTime)
+    sent = db.Column(db.Boolean, default=False)
+    message_id = db.Column(db.Integer, default=None)
+    fact_sending_time = db.Column(db.DateTime)
+    deleted = db.Column(db.Boolean, default=False)
+    deleted_time = db.Column(db.DateTime)
+    comment = db.Column(db.Text)
+
+    def get_schedule_message(self):
+        return ScheduledMessage.query.get(self.scheduled_message_id)
+
+    def get_scheduled_message_type(self):
+        task = ScheduledMessage.query.get(self.scheduled_message_id)
+        return task.message_type
+
+    def get_user(self):
+        return User.query.get(int(self.user_id))
+
+    def set_deleted(self):
+        self.deleted = True
+        db.session.commit()
+
+
+
 class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.Text)
     # юр наименоование
     # адрес
     # инн
-    #
 
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(30), index=True)# название,
-    description = db.Column(db.String(120), index=True)# описание,
-    poster = db.Column(db.JSON, default={"files": ""})# афиша - картинки и видео {'file_id':'sdfgsdg', 'file_type': 'photo/video', 'filename': 'name'}
-    sponsor = db.Column(db.Integer, db.ForeignKey('account.id'))# Организатор - внешний ключ Account
-    place = db.Column(db.Integer, db.ForeignKey('place.id'))# площадка - внешний ключ Place
-    placement = db.Column(db.Integer, db.ForeignKey('placement.id'))# размещение -  внешний ключ Placement
+    name = db.Column(db.Text),
+    description = db.Column(db.Text),
+    poster = db.Column(db.JSON, default={"files": ""}) # афиша - картинки и видео {'file_id':'sdfgsdg', 'file_type': 'photo/video', 'filename': 'name'}
+    sponsor = db.Column(db.Integer, db.ForeignKey('account.id'))
+    place = db.Column(db.Integer, db.ForeignKey('place.id'))
+    placement = db.Column(db.Integer, db.ForeignKey('placement.id'))
     date = db.Column(db.DateTime)
 
 
 class Place(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(30), index=True)# название
-    toun = db.Column(db.String(30), index=True)# город
-    addr = db.Column(db.String(30), index=True)# адрес
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+    city = db.Column(db.Text)
+    addr = db.Column(db.Text)
+
 
 class Placement(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    place = db.Column(db.Integer, db.ForeignKey('place.id'))# площадка - внешний ключ на Place
-    # placement - файл js с местами
+    name = db.Column(db.Text)
+    place = db.Column(db.Integer, db.ForeignKey('place.id'))
+    placement = db.Column(db.ARRAY(db.JSON))
+    excel_filename = db.Column(db.Text)
 
-
+    def get_place(self) -> Place:
+        return Place.query.get(self.place)

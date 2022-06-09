@@ -1,0 +1,59 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block content %}
+    <div class="container-fluid">
+        <h3>{{ place.name if place else 'Новый зал' }}</h3>
+
+        <form method="post" enctype="application/x-www-form-urlencoded">
+            {{ place_form.hidden_tag() }}
+            <input name="pid" type="number" hidden value="{{ place.id if place else 0 }}">
+
+            {{ place_form.name.label(class='form-label') }}
+            {{ place_form.name(class='form-control', value=place.name) }}
+
+            {{ place_form.description.label(class='form-label') }}
+            <textarea class="form-control" name="description" rows="3">{{ place.description }}</textarea>
+
+            <a class='btn btn-outline-secondary' href="{{ url_for('admin.places_view') }}">Закрыть</a>
+            {{ place_form.save(class='btn btn-outline-success') }}
+        </form>
+        <hr>
+        <h5>Варианты рассадок</h5>
+        <form method="post" enctype="multipart/form-data">
+            {{ placement_form.hidden_tag() }}
+
+            {{ placement_form.name.label(class='form-label') }}
+            {{ placement_form.name(class='form-control') }}
+
+            {{ placement_form.excel_file.label(class='form-label') }}
+            {{ placement_form.excel_file(class='form-control') }}
+            {% for err in placement_form.excel_file.errors %}
+                <p style="color: red">{{ err }}</p>
+            {% endfor %}
+
+            {{ placement_form.save_placement(class='btn btn-outline-success') }}
+        </form>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>№</th>
+                <th>Название</th>
+                <th>Вид</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for pm in placements %}
+                <tr>
+                <td>{{ loop.index }}</td>
+                <td><a href="{{ url_for('admin.show_placement', pmid=pm.id) }}">{{ pm.name }}</a></td>
+                <td></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+{% endblock %}
