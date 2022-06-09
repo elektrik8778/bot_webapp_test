@@ -4,7 +4,7 @@ from flask import Blueprint
 
 bp = Blueprint('admin', __name__)
 
-from app.admin import routes, places
+from app.admin import routes, places, events
 from app.telegram_bot.helpers import with_app_context
 from app.models import Group
 from app import db

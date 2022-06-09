@@ -1,0 +1,70 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block content %}
+    <div class="container-fluid">
+        <h3>{{ event.name if event else 'Новый концерт' }}</h3>
+        <form method="post" enctype="multipart/form-data">
+            {{ event_form.hidden_tag() }}
+            <input name="eid" type="number" hidden value="{{ event.id if event else 0 }}">
+
+            {{ event_form.name.label(class='form-label') }}
+            {{ event_form.name(class='form-control', value=event.name) }}
+
+            <label for="event-date" class="form-check-label">Дата</label>
+            <input id="event-date" class="form-control" type="date" name="date" value="{{ event.date }}">
+
+            <label for="event-time" class="form-check-label">Время</label>
+            <input id="event-time" class="form-control" type="time" name="time" value="{{ event.time }}">
+
+            {{ event_form.description.label(class='form-label') }}
+            <textarea class="form-control" name="description" rows="3">{{ event.description }}</textarea>
+
+            {{ event_form.poster.label(class='form-label') }}
+            {{ event_form.poster(class='form-control') }}
+
+            <label for="event-place">Площадка</label>
+            <select class="form-control" name="event-place" id="event-place" required>
+                <option value="">выбрать</option>
+                {% for p in places %}
+                    <option value="{{ p.id }}">{{ p.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="event-placement">Рассадка</label>
+            <select class="form-control" name="event-placement" id="event-placement" required></select>
+
+            <a class='btn btn-outline-secondary' href="{{ url_for('admin.events_view') }}">Закрыть</a>
+            {{ event_form.save_event(class='btn btn-outline-success') }}
+        </form>
+    </div>
+    <script>
+        let placeSelect = document.querySelector('#event-place')
+        placeSelect.addEventListener('change', selectPlace)
+
+        function selectPlace(e){
+            let xhr_place = new XMLHttpRequest()
+            xhr_place.responseType = 'json'
+            xhr_place.open('post', '/admin/get_placemets')
+            data = {
+                pid: e.target.value
+            }
+            xhr_place.send(JSON.stringify(data))
+            xhr_place.onload = ()=>{
+                if (xhr_place.response.length){
+                    $('#event-placement').append($(`<option value="">выбрать</option>`))
+                    xhr_place.response.forEach((e) => {
+                            $('#event-placement').append(
+                                $(`<option value="${e.id}">${e.name}</option>`)
+                            )
+                    })
+                } else
+                    $('#event-placement').empty()
+
+            }
+        }
+    </script>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+{% endblock %}

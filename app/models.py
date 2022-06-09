@@ -213,7 +213,6 @@ class TaskForSending(db.Model):
         db.session.commit()
 
 
-
 class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text)
@@ -227,10 +226,11 @@ class Event(db.Model):
     name = db.Column(db.Text),
     description = db.Column(db.Text),
     poster = db.Column(db.JSON, default={"files": ""}) # афиша - картинки и видео {'file_id':'sdfgsdg', 'file_type': 'photo/video', 'filename': 'name'}
-    sponsor = db.Column(db.Integer, db.ForeignKey('account.id'))
+    organizer = db.Column(db.Integer, db.ForeignKey('account.id'))
     place = db.Column(db.Integer, db.ForeignKey('place.id'))
     placement = db.Column(db.Integer, db.ForeignKey('placement.id'))
-    date = db.Column(db.DateTime)
+    date = db.Column(db.Date)
+    time = db.Column(db.Time)
 
 
 class Place(db.Model):
@@ -239,6 +239,9 @@ class Place(db.Model):
     description = db.Column(db.Text)
     city = db.Column(db.Text)
     addr = db.Column(db.Text)
+
+    def get_placements(self):
+        return Placement.query.filter(Placement.place == self.id).all()
 
 
 class Placement(db.Model):
@@ -250,3 +253,9 @@ class Placement(db.Model):
 
     def get_place(self) -> Place:
         return Place.query.get(self.place)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }

@@ -118,3 +118,10 @@ class PlacementForm(FlaskForm):
     def validate_excel_file(self, excel_file):
         if excel_file.data.filename.split('.')[-1] != 'xlsx':
             raise ValidationError('Файл должен быть формата .xlsx')
+
+
+class EventForm(FlaskForm):
+    name = StringField('Название', validators=[DataRequired()])
+    description = TextAreaField('Описание')
+    poster = MultipleFileField('Афиша')
+    save_event = SubmitField('Сохранить')
