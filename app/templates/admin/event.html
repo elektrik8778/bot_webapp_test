@@ -22,16 +22,39 @@
             {{ event_form.poster.label(class='form-label') }}
             {{ event_form.poster(class='form-control') }}
 
+            {% if event.poster['files'] %}
+                <div class="row">
+                    {% for f in event.poster['files'] %}
+                        <div class="col-auto position-relative">
+                            <img
+                                    src="{{ url_for('static', filename='uploads/events/'+event.id|string+'/posters/'+f['filename']) }}"
+                                    width="200"
+                            >
+                            <a class="btn btn-danger"
+                               href="{{ url_for('admin.del_poster_file', eid=event.id, filename=f['filename']) }}"
+                               style="position: absolute; top: 0; right: 5%;">Х</a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             <label for="event-place">Площадка</label>
             <select class="form-control" name="event-place" id="event-place" required>
                 <option value="">выбрать</option>
                 {% for p in places %}
-                    <option value="{{ p.id }}">{{ p.name }}</option>
+                    <option value="{{ p.id }}" {% if event.place == p.id %} selected {% endif %}>{{ p.name }}</option>
                 {% endfor %}
             </select>
 
             <label for="event-placement">Рассадка</label>
-            <select class="form-control" name="event-placement" id="event-placement" required></select>
+            <select class="form-control" name="event-placement" id="event-placement" required>
+                {% if placements %}
+                    <option value="">выбрать</option>
+                    {% for pm in placements %}
+                        <option value="{{ pm.id }}" {% if event.placement == pm.id %} selected {% endif %}>{{ pm.name }}</option>
+                {% endfor %}
+                {% endif %}
+            </select>
 
             <a class='btn btn-outline-secondary' href="{{ url_for('admin.events_view') }}">Закрыть</a>
             {{ event_form.save_event(class='btn btn-outline-success') }}

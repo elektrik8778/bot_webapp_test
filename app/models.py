@@ -4,14 +4,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import jwt
 from time import time
-# import requests
-# from telegram.constants import ParseMode
-# from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, InputMediaVideo, \
-#     InputMediaAudio
+from telegram import Update, WebAppInfo, InlineKeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, \
+    ReplyKeyboardRemove, KeyboardButton, InputMediaVideo, InputMediaPhoto, LabeledPrice
+from telegram.constants import ParseMode
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import os
-
+import json
 
 @login.user_loader
 def load_user(id):
@@ -223,14 +222,105 @@ class Account(db.Model):
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.Text),
-    description = db.Column(db.Text),
-    poster = db.Column(db.JSON, default={"files": ""}) # афиша - картинки и видео {'file_id':'sdfgsdg', 'file_type': 'photo/video', 'filename': 'name'}
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+    poster = db.Column(db.JSON, default={"files": []}) # афиша - картинки и видео {'file_id':'sdfgsdg', 'file_type': 'photo/video', 'filename': 'name'}
     organizer = db.Column(db.Integer, db.ForeignKey('account.id'))
     place = db.Column(db.Integer, db.ForeignKey('place.id'))
     placement = db.Column(db.Integer, db.ForeignKey('placement.id'))
     date = db.Column(db.Date)
     time = db.Column(db.Time)
+
+    def add_poster(self, f):
+        event_poster = self.poster
+        filename = f.filename
+        poster_cat = os.path.join(Config.UPLOAD_FOLDER, 'events', str(self.id), 'posters')
+        if not os.path.exists(poster_cat):
+            os.makedirs(poster_cat)
+        f.save(os.path.join(poster_cat, filename))
+        event_poster['files'].append({
+            'file_id': '',
+            'file_type': f.headers['Content-Type'].split('/')[0],
+            'filename': filename
+        })
+        self.poster = ''
+        db.session.commit()
+        self.poster = event_poster
+        db.session.commit()
+
+    def del_poster(self, filename):
+        event_poster = self.poster
+        poster_cat = os.path.join(Config.UPLOAD_FOLDER, 'events', str(self.id), 'posters')
+        for index, f in enumerate(event_poster['files']):
+            if f['filename'] == filename:
+                del event_poster['files'][index]
+                os.remove(os.path.join(poster_cat, filename))
+        self.poster = ''
+        db.session.commit()
+        self.poster = event_poster
+        db.session.commit()
+
+    async def send_info(self, update, context):
+        posters = self.poster['files']
+        media_group = []
+        poster_cat = os.path.join(Config.UPLOAD_FOLDER, 'events', str(self.id), 'posters')
+        btn = [InlineKeyboardButton(text='Купить билеты',
+                                    web_app=WebAppInfo(url=f'{Config.SERVER}'),
+                                    )]
+        if len(posters) > 1:
+            for f in posters:
+                media = open(os.path.join(poster_cat, f['filename']), 'rb') if not f['file_id'] else f['file_id']
+                if f['file_type'] == 'image':
+                    media_group.append(InputMediaPhoto(media=media,
+                                                       caption=self.description,
+                                                       parse_mode=ParseMode.MARKDOWN))
+                elif f['file_type'] == 'video':
+                    media_group.append(InputMediaVideo(media=media,
+                                                       caption=self.description,
+                                                       parse_mode=ParseMode.MARKDOWN))
+
+            response = await update.effective_message.reply_media_group(media=media_group,
+                                                                  protect_content=True)
+            for index, msg in enumerate(response):
+                posters[index]['file_id'] = msg.photo[-1].file_id if posters[index]['file_type'] == 'image' else msg.video.file_id
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'*{self.name}*\n{self.date.strftime("%d.%m.%y")}, {self.time.strftime("%H:%M")}\n\n{self.description}',
+                reply_markup=InlineKeyboardMarkup([btn]),
+                protect_content=True,
+                parse_mode=ParseMode.MARKDOWN)
+        elif len(posters) == 1:
+            media = open(os.path.join(poster_cat, posters[0]['filename']), 'rb') if not posters[0]['file_id'] else posters[0]['file_id']
+            if posters[0]['file_type'] == 'image':
+                response = await context.bot.send_photo(
+                    chat_id=update.effective_chat.id,
+                    photo=media,
+                    caption=f'*{self.name}*\n{self.date.strftime("%d.%m.%y")}, {self.time.strftime("%H:%M")}\n\n{self.description}',
+                    reply_markup=InlineKeyboardMarkup([btn]),
+                    protect_content=True,
+                    parse_mode=ParseMode.MARKDOWN)
+                posters[0]['file_id'] = response.photo[-1].file_id
+            elif posters[0]['file_type'] == 'video':
+                response = await context.bot.send_video(
+                    chat_id=update.effective_chat.id,
+                    video=media,
+                    caption=f'*{self.name}*\n{self.date.strftime("%d.%m.%y")}, {self.time.strftime("%H:%M")}\n\n{self.description}',
+                    reply_markup=InlineKeyboardMarkup([btn]),
+                    protect_content=True,
+                    parse_mode=ParseMode.MARKDOWN)
+                posters[0]['file_id'] = response.video.file_id
+        elif len(posters) == 0:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'*{self.name}*\n{self.date.strftime("%d.%m.%y")}, {self.time.strftime("%H:%M")}\n\n{self.description}',
+                reply_markup=InlineKeyboardMarkup([btn]),
+                protect_content=True,
+                parse_mode=ParseMode.MARKDOWN)
+        self.poster = ''
+        db.session.commit()
+        self.poster = {'files': posters}
+        db.session.commit()
+        return 'ok'
 
 
 class Place(db.Model):
