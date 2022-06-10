@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Зал {{ placement.get_place().name }}, рассадка {{ placement.name }}</title>
+    <title>Зал {{ event.get_placement().get_place().name }}, рассадка {{ event.get_placement().name }}</title>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css')  }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
@@ -12,7 +12,7 @@
     <script src="{{ url_for('static', filename='js/dist/scheme-designer.min.js')  }}"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- data for scheme -->
-    <script src="{{ url_for('static', filename='/uploads/placements/'+placement.id|string+'/'+placement.excel_filename.split('.')[0]+'.js')  }}"></script>
+    <script src="{{ url_for('static', filename='uploads/placements/'+event.placement|string+'/'+event.get_placement().excel_filename.split('.')[0]+'.js')  }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 
     <style>
@@ -77,8 +77,8 @@
 
         <div style="text-align: center;">
             <section class="sticky-top">
-                <h2>{{ placement.get_place().name }}</h2>
-                <p>{{ placement.name }}</p>
+                <h2>{{ event.get_placement().get_place().name }}</h2>
+                <p>{{ event.get_placement().name }}</p>
 
             </section>
                 <div class="fbox fbox_colors">

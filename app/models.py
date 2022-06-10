@@ -265,7 +265,7 @@ class Event(db.Model):
         media_group = []
         poster_cat = os.path.join(Config.UPLOAD_FOLDER, 'events', str(self.id), 'posters')
         btn = [InlineKeyboardButton(text='Купить билеты',
-                                    web_app=WebAppInfo(url=f'{Config.SERVER}'),
+                                    web_app=WebAppInfo(url=f'{Config.SERVER}/event/{self.id}/chairs'),
                                     )]
         if len(posters) > 1:
             for f in posters:
@@ -321,6 +321,9 @@ class Event(db.Model):
         self.poster = {'files': posters}
         db.session.commit()
         return 'ok'
+
+    def get_placement(self):
+        return Placement.query.get(self.placement)
 
 
 class Place(db.Model):

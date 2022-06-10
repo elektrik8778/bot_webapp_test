@@ -13,7 +13,6 @@ application.add_handler(CommandHandler('start', handlers.start))
 application.add_handler(CommandHandler('help', handlers.help_command))
 application.add_handler(CommandHandler('events', handlers.events))
 application.add_handler(CommandHandler('ppay', handlers.send_pay))
-application.add_handler(CommandHandler('placement', callback=handlers.create_placement))
 
 application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handlers.echo))
 

@@ -46,11 +46,6 @@ async def echo(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
 
 @with_app_context
-async def create_placement(update: Update, context: CallbackContext.DEFAULT_TYPE):
-    pass
-
-
-@with_app_context
 async def help_command(update: Update, context: CallbackContext.DEFAULT_TYPE):
     chat_id = int(update.message.from_user.id)
     message_id = int(update.message.message_id)
