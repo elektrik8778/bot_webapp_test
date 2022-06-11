@@ -96,7 +96,6 @@ async def send_event(update: Update, context: CallbackContext.DEFAULT_TYPE):
 @with_app_context
 async def help(update: Update, context: CallbackContext.DEFAULT_TYPE):
     user = User.query.filter(User.tg_id == update.callback_query.from_user.id).first()
-    print(user)
     await update.callback_query.delete_message()
     # texts.help(user)
 

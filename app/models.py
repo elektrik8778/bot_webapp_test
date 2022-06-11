@@ -224,7 +224,7 @@ class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text)
     description = db.Column(db.Text)
-    poster = db.Column(db.JSON, default={"files": []}) # афиша - картинки и видео {'file_id':'sdfgsdg', 'file_type': 'photo/video', 'filename': 'name'}
+    poster = db.Column(db.JSON, default={'files': []}) # афиша - картинки и видео {'file_id':'sdfgsdg', 'file_type': 'photo/video', 'filename': 'name'}
     organizer = db.Column(db.Integer, db.ForeignKey('account.id'))
     place = db.Column(db.Integer, db.ForeignKey('place.id'))
     placement = db.Column(db.Integer, db.ForeignKey('placement.id'))
@@ -238,6 +238,7 @@ class Event(db.Model):
         if not os.path.exists(poster_cat):
             os.makedirs(poster_cat)
         f.save(os.path.join(poster_cat, filename))
+        print(filename, f.headers['Content-Type'].split('/')[0])
         event_poster['files'].append({
             'file_id': '',
             'file_type': f.headers['Content-Type'].split('/')[0],

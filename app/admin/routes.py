@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from app import db
 from app import bot
 from app.admin import bp
-from app.models import User, Group, Tag, UserTag, ScheduledMessage
+from app.models import User, Group, Tag, UserTag, ScheduledMessage, Placement
 from app.admin.forms import ChangeWebhookForm, ScheduledMessageCreateForm, SendTGMessageForm, SendGroupTGMessageForm,\
     CreateGroupForm, CreateModerForm, CreateQuestionForm, EditQuizForm, PrizeForm
 from config import Config
@@ -30,13 +30,25 @@ import re
 @bp.route('/admin')
 @login_required
 def admin():
+    print(current_user.tg_id)
     if current_user.role == 'admin' or current_user.role == 'moderator':
         send_group_tg_mes_form = SendGroupTGMessageForm()
         return render_template('admin/admin.html',
                                send_group_tg_mes_form=send_group_tg_mes_form,
                                title='Админка')
     else:
-        return redirect(url_for('main.index'))
+        # return redirect(url_for('main.index'))
+        bot_name = Config.BOT_NAME
+        title = 'Главная'
+        server = Config.SERVER
+        placement: Placement.query.filter(Placement.id == 1).first()
+        print(placement)
+        return render_template('main/with-map.html',
+                               bot_name=bot_name,
+                               title=title,
+                               server=server,
+                               placement=placement,
+                               )
 
 
 @bp.route('/admin/settings', methods=['GET', 'POST'])
@@ -53,7 +65,8 @@ def admin_settings():
         webhook_form.url.data = url_for('telegram_bot.telegram', _external=True)
         return render_template('admin/admin_settings.html', title='Настройки', form=webhook_form)
     else:
-        return redirect(url_for('main.index'))
+        # return redirect(url_for('main.index'))
+        return redirect('main/index.html')
 
 
 @bp.route('/admin/message_schedule', methods=['GET', 'POST'])
@@ -319,30 +332,6 @@ def user_view_settings():
         return redirect(url_for('main.index'))
 
 
-@bp.route('/test_send_task_<id>')
-def test_send_task(id):
-    task = ScheduledMessage.query.get(id)
-    text = task.text
-    if task.message_type == 'photo':
-        bot.send_photo(chat_id=current_user.tg_id,
-                                  photo=task.content_link,
-                                  caption=text,
-                                  parse_mode=ParseMode.MARKDOWN)
-    elif task.message_type == 'text':
-        bot.send_message(chat_id=current_user.tg_id,
-                         text=text,
-                         parse_mode=ParseMode.MARKDOWN,
-                         disable_web_page_preview=False)
-    elif task.message_type == 'video':
-        bot.send_video(chat_id=current_user.tg_id,
-                       video=task.content_link,
-                       caption=text,
-                       parse_mode=ParseMode.MARKDOWN)
-    elif task.message_type == 'poll':
-        send_quiz_start(quiz_id=int(text), users=[current_user])
-    return redirect(url_for('admin.message_schedule'))
-
-
 @bp.route('/moderation', methods=['GET', 'POST'])
 @login_required
 def moderation():
@@ -453,278 +442,6 @@ def del_group(group_id):
     return redirect(url_for('admin.moderation'))
 
 
-@bp.route('/quiz_list', methods=['GET', 'POST'])
-@login_required
-def quiz_list():
-    quizes = Quiz.query.all()
-    create_question_form = CreateQuestionForm()
-    if create_question_form.validate_on_submit():
-        print('Создаем вопрос')
-    return render_template('admin/quiz_list.html', quizes=quizes, create_question_form=create_question_form)
-
-
-@bp.route('/create_quiz_<quiz_id>', methods=['GET', 'POST'])
-@login_required
-def create_quiz(quiz_id):
-    if quiz_id == 'new':
-        quiz = Quiz()
-        quiz.name = f'Новая_{len(Quiz.query.all())+1}'
-        db.session.add(quiz)
-        db.session.commit()
-        return redirect(url_for('admin.create_quiz', quiz_id=quiz.id))
-    else:
-        quiz = Quiz.query.get(quiz_id)
-        create_question_form = CreateQuestionForm()
-        edit_quiz_form = EditQuizForm()
-
-        if edit_quiz_form.validate_on_submit() and edit_quiz_form.save_quiz.data:
-
-            quiz.name = edit_quiz_form.quiz_name.data
-
-            if not edit_quiz_form.quiz_description.data:
-                quiz.description = None
-            else:
-                quiz.description = edit_quiz_form.quiz_description.data
-
-            if edit_quiz_form.quiz_final_text.data == '':
-                quiz.final_text = None
-            else:
-                quiz.final_text = edit_quiz_form.quiz_final_text.data
-
-            if edit_quiz_form.command == '':
-                quiz.command = None
-            else:
-                quiz.command = edit_quiz_form.command.data
-
-            if pic:=edit_quiz_form.pic.data:
-                folder = os.path.join(Config.UPLOAD_FOLDER, 'quiz', str(quiz.id))
-                if quiz.pic:
-                    try:
-                        os.remove(os.path.join(folder, 'quiz_pic.jpg'))
-                    except Exception as e:
-                        print(e)
-                pic.save(os.path.join(folder, 'quiz_pic.jpg'))
-                with open(os.path.join(folder, 'quiz_pic.jpg'), 'rb') as photo:
-                    response = bot.send_photo(chat_id=current_user.tg_id, photo=photo)
-                    quiz.pic = response.photo[-1].file_id
-                    bot.delete_message(chat_id=current_user.tg_id, message_id=response.message_id)
-
-            db.session.commit()
-            return redirect(url_for('admin.create_quiz', quiz_id=quiz.id))
-
-        if create_question_form.validate_on_submit() and create_question_form.save_question.data:
-            save_question(request, create_question_form, quiz)
-            return redirect(url_for('admin.create_quiz', quiz_id=quiz.id, edit_quiz_form=edit_quiz_form))
-
-        if quiz.description:
-            edit_quiz_form.quiz_description.data = quiz.description
-        if quiz.final_text:
-            edit_quiz_form.quiz_final_text.data = quiz.final_text
-        if quiz.command:
-            edit_quiz_form.command.data = quiz.command
-
-        return render_template('admin/create_quiz.html',
-                               quiz=quiz,
-                               create_question_form=create_question_form,
-                               edit_quiz_form=edit_quiz_form)
-
-
-def save_question(request, create_question_form, quiz, question=None):
-    quiz_files_catalog = f'app/static/uploads/quiz/{quiz.id}'
-    variants = ''
-    form = request.form
-    for i in form:
-        if re.match('variant-\d+', i):
-            right = ''
-            if f'right-{i.split("-")[-1]}' in form:
-                right = '(верный)'
-            if right:
-                variants += f'{form[i]} {right}\n'
-            else:
-                variants += f'{form[i]}\n'
-
-    if not question:
-        question = Question()
-    question.quiz_id = quiz.id
-    question.question_type = create_question_form.question_type.data
-    question.question_text = create_question_form.question_text.data
-    question.send_variants = True if 'send-vars' in form else False
-    question.question_variants = variants.strip()
-
-    if question.question_type != 'text':
-        # проверили, что есть каталог или создали
-        if not os.path.exists(quiz_files_catalog):
-            os.makedirs(quiz_files_catalog)
-        files = create_question_form.question_content.data
-
-        # если в форме есть файлы для вопроса
-        if files[0].filename != '':
-            # удалить старые файлы физически
-            if question.question_content_link:
-                for old_file in question.question_content_link.split(','):
-                    os.remove(old_file)
-            # удалить ссылки на старые файлы из базы
-            question.question_content_link = ''
-            question.question_content = ''
-
-            # добавить новые файлы
-            for f in files:
-                filename = f.filename
-                f.save(os.path.join(quiz_files_catalog, filename))
-                if not question.question_content_link:
-                    question.question_content_link = f'{os.path.join(quiz_files_catalog, filename)}'
-                else:
-                    question.question_content_link += f',{os.path.join(quiz_files_catalog, filename)}'
-
-            if question.question_type == 'photo':
-                for link in question.question_content_link.split(','):
-                    with open(link, 'rb') as photo:
-                        response = bot.send_photo(chat_id=current_user.tg_id,
-                                                  photo=photo,
-                                                  caption=f'Викторина {quiz.id}, вопрос {question.question_text}')
-                        if not question.question_content:
-                            question.question_content = f'{response.photo[-1].file_id}'
-                        else:
-                            question.question_content += f',{response.photo[-1].file_id}'
-                        bot.delete_message(chat_id=current_user.tg_id,
-                                           message_id=response.message_id)
-            elif question.question_type == 'video':
-                with open(question.question_content_link, 'rb') as video:
-                    response = bot.send_video(chat_id=current_user.tg_id,
-                                              video=video,
-                                              caption=f'Викторина {quiz.id}, вопрос {question.question_text}')
-                    question.question_content = response.video.file_id
-                    bot.delete_message(chat_id=current_user.tg_id,
-                                       message_id=response.message_id)
-            elif question.question_type == 'audio':
-                with open(question.question_content_link, 'rb') as audio:
-                    response = bot.send_audio(chat_id=current_user.tg_id,
-                                              audio=audio,
-                                              caption=f'Викторина {quiz.id}, вопрос {question.question_text}')
-                    question.question_content = response.audio.file_id
-                    bot.delete_message(chat_id=current_user.tg_id,
-                                       message_id=response.message_id)
-    else:
-        question.question_content_link = ''
-        question.question_content = ''
-
-    question.answer_type = create_question_form.answer_type.data
-    question.right_answer_text = create_question_form.right_answer_text.data
-    question.wrong_answer_text = create_question_form.wrong_answer_text.data
-    question.answer_explanation = create_question_form.answer_explanation.data
-
-    if question.answer_type != 'text':
-        if not os.path.exists(quiz_files_catalog):
-            os.makedirs(quiz_files_catalog)
-        f = create_question_form.answer_content.data
-        if f.filename:
-            # удалить старые фото
-            if question.answer_content_link:
-                os.remove(question.answer_content_link)
-            # сохранить новые
-            filename = f.filename
-            f.save(os.path.join(quiz_files_catalog, filename))
-            question.answer_content_link = os.path.join(quiz_files_catalog, filename)
-            if question.answer_type == 'photo':
-                with open(question.answer_content_link, 'rb') as photo:
-                    response = bot.send_photo(chat_id=current_user.tg_id,
-                                              photo=photo)
-                    question.answer_content = response.photo[-1].file_id
-                    bot.delete_message(chat_id=current_user.tg_id,
-                                       message_id=response.message_id)
-            elif question.answer_type == 'video':
-                with open(question.answer_content_link, 'rb') as video:
-                    response = bot.send_video(chat_id=current_user.tg_id,
-                                              video=video)
-                    question.answer_content = response.video.file_id
-                    bot.delete_message(chat_id=current_user.tg_id,
-                                       message_id=response.message_id)
-            elif question.answer_type == 'audio':
-                with open(question.answer_content_link, 'rb') as audio:
-                    response = bot.send_audio(chat_id=current_user.tg_id,
-                                              audio=audio)
-                    question.answer_content = response.audio.file_id
-                    bot.delete_message(chat_id=current_user.tg_id,
-                                       message_id=response.message_id)
-    else:
-        question.answer_content = ''
-        question.answer_content_link = ''
-    db.session.add(question)
-    db.session.commit()
-
-
-@bp.get('/admin/question/<qid>')
-def question_datailed(qid):
-    q: Question = Question.query.get(int(qid))
-
-    variants = {}
-    variants_list = q.question_variants.split('\n')
-    for index, var in enumerate(variants_list):
-        variants[index] = {
-            'text': var.split('(верный)')[0].strip(),
-            'right': True if '(верный)' in var else False
-        }
-
-    q_form = CreateQuestionForm()
-    q_form.question_type.data = q.question_type
-    q_form.question_text.data = q.question_text
-    q_form.answer_type.data = q.answer_type
-    q_form.right_answer_text.data = q.right_answer_text
-    q_form.wrong_answer_text.data = q.wrong_answer_text
-    q_form.answer_explanation.data = q.answer_explanation
-
-    return render_template('/admin/question_detailed.html',
-                           q=q,
-                           form=q_form,
-                           variants=json.dumps(variants, ensure_ascii=False))
-
-
-@bp.post('/admin/question/<qid>')
-def question_datailed_post(qid):
-    q: Question = Question.query.get(int(qid))
-    q_form = CreateQuestionForm()
-    if q_form.validate_on_submit():
-        save_question(request, q_form, q.quiz(), q)
-        return redirect(request.referrer)
-
-
-@bp.route('/send_quiz_<quiz_id>_<user_id>', methods=['GET', 'POST'])
-@login_required
-def send_quiz(quiz_id, user_id):
-    user = User.query.get(user_id)
-    send_quiz_start(quiz_id, [user])
-    return redirect(url_for('admin.create_quiz', quiz_id=quiz_id))
-
-
-@bp.route('/del_question_<quiz_id>_<question_id>', methods=['GET', 'POST'])
-@login_required
-def del_question(quiz_id, question_id):
-    question = Question.query.get(question_id)
-    if question.question_content_link and os.path.exists(question.question_content_link):
-        os.remove(question.question_content_link)
-    if question.answer_content_link and os.path.exists(question.answer_content_link):
-        os.remove(question.answer_content_link)
-    db.session.delete(question)
-    db.session.commit()
-    return redirect(url_for('admin.create_quiz', quiz_id=quiz_id))
-
-
-@bp.route('/del_quiz_<quiz_id>', methods=['GET', 'POST'])
-@login_required
-def del_quiz(quiz_id):
-    quiz = Quiz.query.get(quiz_id)
-    for question in quiz.questions():
-        if question.question_content_link and os.path.exists(question.question_content_link):
-            os.remove(question.question_content_link)
-        if question.answer_content_link and os.path.exists(question.answer_content_link):
-            os.remove(question.answer_content_link)
-        db.session.delete(question)
-    db.session.commit()
-    db.session.delete(quiz)
-    db.session.commit()
-    return redirect(url_for('admin.quiz_list'))
-
-
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
@@ -736,53 +453,6 @@ def upload_file(file):
         file.save(os.path.join(Config.UPLOAD_FOLDER, filename))
         return redirect(url_for('uploaded_file',
                                 filename=filename))
-
-
-def send_quiz_start(quiz_id, users):
-    quiz = Quiz.query.get(quiz_id)
-    buttons = [
-        {
-            'text': 'Начинаем',
-            'data': f'startQuiz_{quiz_id}'
-        }
-    ]
-    map = create_button_map(buttons, 1)
-    reply_markup = get_inline_menu(map)
-    for user in users:
-        if quiz.pic:
-            bot.send_photo(chat_id=user.tg_id,
-                           caption=quiz.description,
-                           photo=quiz.pic,
-                           reply_markup=reply_markup,
-                           parse_mode=ParseMode.MARKDOWN)
-        else:
-            bot.send_message(chat_id=user.tg_id,
-                             text=quiz.description,
-                             reply_markup=reply_markup,
-                             parse_mode=ParseMode.MARKDOWN)
-        user.status = f'playQuiz_{quiz.id}_0'
-        db.session.commit()
-        return 'ok'
-
-
-def send_quest_start(quest_id, users):
-    quest = Quest.query.get(quest_id)
-    buttons = [
-        {
-            'text': 'Начинаем',
-            'data': f'startQuest_{quest_id}'
-        }
-    ]
-    map = create_button_map(buttons, 1)
-    reply_markup = get_inline_menu(map)
-    for user in users:
-        bot.send_message(chat_id=user.tg_id,
-                         text=quiz.description,
-                         reply_markup=reply_markup,
-                         parse_mode='Markdown')
-        user.status = f'quest_{quiz.id}_1'
-        db.session.commit()
-        return 'ok'
 
 
 @bp.get('/admin/generate')

@@ -49,6 +49,5 @@ async def telegram():
 
 @bp.route('/webappresponse', methods=['POST'])
 async def post_response():
-    print('Получено')
     pprint(request.json)
     return 'ok'
