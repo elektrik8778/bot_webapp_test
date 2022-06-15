@@ -38,4 +38,5 @@ def index():
 
 @bp.get('/event/<eid>/chairs')
 def web_app_event_chairs(eid):
-    return render_template('main/with-map.html', event=Event.query.get(int(eid)))
+    max_places = Config.MAX_PLACES
+    return render_template('main/with-map.html', event=Event.query.get(int(eid)), max_places=max_places)

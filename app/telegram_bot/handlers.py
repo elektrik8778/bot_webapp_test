@@ -104,7 +104,7 @@ async def help(update: Update, context: CallbackContext.DEFAULT_TYPE):
 async def delete_message(update: Update, context: CallbackContext.DEFAULT_TYPE):
     await update.callback_query.delete_message()
 
-
+@with_app_context
 async def send_pay(update: Update, context: CallbackContext.DEFAULT_TYPE):
     user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
     prices = [LabeledPrice(label='Концерт', amount=int(5 * 10000))]

@@ -18,43 +18,13 @@
 
     <style>
 
-        .fbox {
-            $size: 10rem;
-            display: flex;
-
-            &-aside {
-                display: block;
-                width: $size;
-            }
-
-              &-content {
-                flex: 1;
-              }
-
-          &_colors &-aside {
-            background-color: #5e2750;
-            color: white;
-            padding: 1rem;
-            font-size: 1.5rem;
-            min-height: 10rem;
-            font-weight: 700;
-          }
-
-          &_colors &-content {
-            background-color: #f08763;
-            color: white;
-            padding: 1rem;
-            font-size: 1.5rem;
-            min-height: 20rem;
-            font-weight: 700;
-          }
-        }
+        
         .canvas-holder {
             width: 100%;
             height: 500px;
             position:relative;
         }
-        }
+        
 
 
 
@@ -68,22 +38,14 @@
             <section class="sticky-top">
                 <h2>{{ event.get_placement().get_place().name }}</h2>
                 <p>{{ event.get_placement().name }}</p>
-
             </section>
-                <div class="fbox fbox_colors">
-                  <div class="fbox-aside">
-                    Fixed
-                  </div>
-                  <div class="fbox-content">
-                    Adaptive
-                  </div>
-            </div>
+
         </div>
 
 
 
-<!--    <div style="text-align: center;">-->
-    <div>
+    <div style="text-align: center;">
+
 
 
     <div class="sticky-top">
@@ -92,28 +54,8 @@
                 <div class="col-sm-6" style="margin-bottom: 5px;">
                     <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(10)">+</button>
                     <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(-10)">-</button>
-                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().showNodesParts()">
-                            Сбросить выбор
-                    </button>
+                    <button type="button" class="btn btn-warning btn-sm" onclick="clear_choice()">Сбросить выбор</button>
                 </div>
-
-                <div class="col-sm-6" style="margin-bottom: 5px;">
-                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().showNodesParts()">
-                        Show grid
-                    </button>
-                </div>
-
-<!--                <div class="col-sm-2" style="margin-bottom: 5px;">-->
-<!--                    <button type="button" class="btn btn-info btn-sm" onclick="schemeDesigner.getScrollManager().toCenter(); schemeDesigner.requestRenderAll();">-->
-<!--                        Scroll to center-->
-<!--                    </button>-->
-<!--                </div>-->
-
-<!--                <div class="col-sm-2" style="margin-bottom: 5px;">-->
-<!--                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().setLayerVisibility('background', !schemeDesigner.getStorageManager().getLayerById('background').isVisible())">-->
-<!--                        Show/hide background-->
-<!--                    </button>-->
-<!--                </div>-->
 
             </div>
         </div>
@@ -133,10 +75,12 @@
     </div>
 </div>
 <script>
-    {# инициализация бота #}
+    var max_places = {{ max_places }};
+    console.log("max_places:", max_places);
     const bot = Telegram.WebApp;
-
+    var total_price = 0;
     var choose_places = new Map([]);
+    var count_places = 0;
 
     if (localStorage.fl === undefined) {
         localStorage.clear()
@@ -145,11 +89,11 @@
     if (localStorage.uid === undefined) {
         localStorage.uid = bot.initDataUnsafe.user.id
     }
-    const uid = localStorage.uid
-    console.log(uid)
+    var uid = localStorage.uid;
+    console.log("user_tg_id:", uid);
 
     bot.MainButton.onClick(function () {
-
+        choose_places.set("user_tg_id", uid);
         (async () => {
             const rawResponse = await fetch('{{  server  }}/webappresponse', {
                 method: 'POST',
@@ -161,20 +105,34 @@
             body: JSON.stringify(Object.fromEntries(choose_places))
           });
           const content = await rawResponse.json();
-<!--          console.log(obj);-->
-<!--          console.log(content);-->
         })();
 
         bot.close();
     });
 
-
+    
 
     var backgroundLayer = new SchemeDesigner.Layer('background', {zIndex: 0, visible: false, active: false});
     var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 10});
 
     var twoPi = Math.PI * 2;
 
+    function clear_choice(){
+        total_price = 0;
+        choose_places.clear();
+        count_places = 0;
+        bot.MainButton.hide()
+        console.log(choose_places);
+        console.log(total_price);
+        var all_objects = defaultLayer.getObjects(); 
+        
+        for (var i = 0; i < all_objects.length; i++){
+            if (all_objects[i].params.isSelected){
+                console.log(unescape(all_objects[i].params.sectorName), all_objects[i].params.row, all_objects[i].params.seat);
+            }
+            
+        }
+    }
     /**
      * Render place function
      * @param {SchemeObject} schemeObject
@@ -192,25 +150,26 @@
         context.lineWidth = 4;
         context.strokeStyle = 'white';
 
-        var isHovered = schemeObject.isHovered && !SchemeDesigner.Tools.touchSupported();
+        // var isHovered = schemeObject.isHovered && !SchemeDesigner.Tools.touchSupported();
 
         context.fillStyle = backgroundColor;
 
-        if (objectParams.isSelected && isHovered) {
+        if (objectParams.isSelected) {
+            // context.strokeStyle = backgroundColor;
+            context.fillStyle = 'green';
             context.strokeStyle = backgroundColor;
-        } else if (isHovered) {
-            context.fillStyle = 'white';
-            context.strokeStyle = backgroundColor;
-        } else if (objectParams.isSelected) {
-            context.strokeStyle = backgroundColor;
-        }
+        // } else if (isHovered) {
+        //     context.fillStyle = 'green';
+        //     context.strokeStyle = backgroundColor;
+        } 
 
         var relativeX = schemeObject.x;
         var relativeY = schemeObject.y;
 
         var width = schemeObject.getWidth();
         var height = schemeObject.getHeight();
-        if (!isHovered && !objectParams.isSelected) {
+        
+        if (!objectParams.isSelected) {
             var borderOffset = 4;
             relativeX = relativeX + borderOffset;
             relativeY = relativeY + borderOffset;
@@ -239,15 +198,13 @@
 
         context.font = (Math.floor((schemeObject.getWidth() + schemeObject.getHeight()) / 4)) + 'px Arial';
 
-        if (objectParams.isSelected && isHovered) {
+        if (objectParams.isSelected) {
             context.fillStyle = 'white';
-        } else if (isHovered) {
-            context.fillStyle = backgroundColor;
         } else if (objectParams.isSelected) {
             context.fillStyle = 'white';
         }
 
-        if (objectParams.isSelected || isHovered) {
+        if (objectParams.isSelected) {
             context.textAlign = 'center';
             context.textBaseline = 'middle';
             if (schemeObject.rotation) {
@@ -286,12 +243,32 @@
         context.fillText(objectParams.sectorName, schemeObject.getX(), schemeObject.getY());
     };
 
+    
 
     var clickOnPlace = function (schemeObject, schemeDesigner, view, e)
     {
         var objectParams = schemeObject.getParams();
-        objectParams.isSelected = !objectParams.isSelected;
-        console.log(e.objectParams)
+        console.log('e.objectParams:',e.view.objectData)
+        
+                 
+        if (count_places<5 || choose_places.has(objectParams.id)) {
+            objectParams.isSelected = !objectParams.isSelected;
+
+            if (choose_places.has(objectParams.id)) {
+                choose_places.delete(objectParams.id);
+                count_places -=1;
+            } else {
+                if (count_places<max_places){
+                    choose_places.set(objectParams.id, objectParams.price);
+                }
+                count_places +=1;
+            };
+
+        }
+
+        
+        //objectParams.isSelected = !objectParams.isSelected;
+
     };
 
     /**
@@ -314,7 +291,8 @@
             y: 0.5 + topOffset,
             width: width,
             height: height,
-            active: objectData.ObjectType == 'Place',
+            //active: objectData.ObjectType == 'Place',
+            active: objectData.avail == true,
             renderFunction: objectData.ObjectType == 'Place' ? renderPlace : renderLabel,
             cursorStyle: objectData.ObjectType == 'Place' ? 'pointer' : 'default',
 
@@ -409,29 +387,27 @@
 
 
     canvas.addEventListener('schemeDesigner.beforeRenderAll', function (e) {
-        console.time('renderAll');
+        // console.time('renderAll');
     }, false);
 
     canvas.addEventListener('schemeDesigner.afterRenderAll', function (e) {
-        console.timeEnd('renderAll');
+        // console.timeEnd('renderAll');
     }, false);
 
     canvas.addEventListener('schemeDesigner.clickOnObject', function (e) {
-        // console.log('clickOnObject', e.detail.params.id);
-        var total_price = 0;
-        let placeId = e.detail.params.id
+        console.log('clickOnObject', e.detail.params.id, e.detail);
+        total_price = 0;
+        let placeId = e.detail.params.id;
         let placePrice = parseInt(e.detail.params.price, 10);
 
-        if (choose_places.has(placeId)) {
-            choose_places.delete(placeId);
-        } else {
-            choose_places.set(placeId, placePrice);
-        };
+        
 
         choose_places.forEach(value => {
                         total_price += value;
         });
-
+        console.log('choose_places:',choose_places);
+        console.log('count_places:', count_places);
+        console.log('total_price:', total_price);
         bot.MainButton.setParams({
                 'text': total_price.toString(),
                 'color': '#00ff00',
@@ -442,13 +418,13 @@
         bot.MainButton.show()
     }, false);
 
-    canvas.addEventListener('schemeDesigner.mouseOverObject', function (e) {
-       // console.log('mouseOverObject', e.detail);
-    }, false);
+    // canvas.addEventListener('schemeDesigner.mouseOverObject', function (e) {
+    //    // console.log('mouseOverObject', e.detail);
+    // }, false);
 
-    canvas.addEventListener('schemeDesigner.mouseLeaveObject', function (e) {
-      //  console.log('mouseLeaveObject', e.detail);
-    }, false);
+    // canvas.addEventListener('schemeDesigner.mouseLeaveObject', function (e) {
+    //   //  console.log('mouseLeaveObject', e.detail);
+    // }, false);
 
     canvas.addEventListener('schemeDesigner.scroll', function (e) {
       //  console.log('scroll', e.detail);

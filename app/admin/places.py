@@ -153,10 +153,12 @@ def theme_and_tint_to_rgb(wb, theme, tint):
 
 def create_placement(path, filename):
     wb = openpyxl.load_workbook(filename=os.path.join(path, filename))
-    sheet_places = wb['вариант 1']
+    sheet_places = wb['вариант 2']
     schemeData = []
     for r in sheet_places:
+
         for c in r:
+            print(r,c)
             if c.value:
                 # print(c.value, c.coordinate)
                 theme = c.fill.start_color.theme
@@ -174,6 +176,7 @@ def create_placement(path, filename):
                             if color == price_color:
                                 price = cell.value
                 if c.value.split('\n')[0] == 'надпись':
+
                     schemeData.append({
                         "NomBilKn": "1338",
                         "ObjectName": "Label",
@@ -185,7 +188,7 @@ def create_placement(path, filename):
                         "CY": f"{c.row*100 + 25}",
                         "CY2": f"{c.row*100 + 45}",
                         "Angle": "0.00",
-                        "Row": "",
+                        "Row": f"",
                         "Seat": "",
                         "cod_sec": "0",
                         "Name_sec": str(c.value.split('\n')[-1]),

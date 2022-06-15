@@ -1,3 +1,5 @@
+
+
 var SchemeDesigner;
 (function (SchemeDesigner) {
     /**
@@ -1592,6 +1594,7 @@ var SchemeDesigner;
          * @param e
          */
         EventManager.prototype.onClick = function (e) {
+            console.log("onClick");
             if (!this.isDragging) {
                 var objects = this.findObjectsForEvent(e);
                 for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
@@ -1636,7 +1639,7 @@ var SchemeDesigner;
                 }
             }
             if (!this.isDragging) {
-                this.handleHover(e);
+                // this.handleHover(e);
             }
             else {
                 this.scheme.getScrollManager().handleDragging(e);

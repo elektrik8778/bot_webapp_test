@@ -8,6 +8,9 @@ import os
 from flask import request
 from pprint import pprint
 from telegram.ext import CommandHandler, MessageHandler, filters, CallbackQueryHandler, PreCheckoutQueryHandler
+from telegram import LabeledPrice
+from app.models import User
+
 
 application.add_handler(CommandHandler('start', handlers.start))
 application.add_handler(CommandHandler('help', handlers.help_command))
@@ -49,5 +52,23 @@ async def telegram():
 
 @bp.route('/webappresponse', methods=['POST'])
 async def post_response():
-    pprint(request.json)
+    print(request.json)
+    customer_tg_id = request.json['user_tg_id']
+    user: User = User.query.filter(User.tg_id == customer_tg_id).first()
+    places = [i for i in request.json.keys() if 'place_' in i]
+    prices = [request.json[i] for i in request.json.keys() if 'place_' in i]
+    prices = [LabeledPrice(label='Места', amount=(sum(prices) * 100))]
+    print(user, places, prices)
+    # await application.bot.send_invoice(chat_id=customer_tg_id,
+    #                              title='Места',
+    #                              description=places,
+    #                              payload='Custom-Payload',
+    #                              provider_token=('284685063:TEST:MTlkMTA0NDBkM2U0'),
+    #                              currency='RUB',
+    #                              prices=prices,
+    #                              protect_content=True,
+    #                              need_phone_number=False,
+    #                              max_tip_amount=40000,
+    #                              # suggested_tip_amounts=[19900, 29900, 39900]
+    #                             )
     return 'ok'
