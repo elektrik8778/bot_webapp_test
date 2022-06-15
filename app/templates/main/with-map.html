@@ -105,6 +105,7 @@
             body: JSON.stringify(Object.fromEntries(choose_places))
           });
           const content = await rawResponse.json();
+          console.log(content);
         })();
 
         bot.close();
@@ -117,7 +118,9 @@
 
     var twoPi = Math.PI * 2;
 
-    function clear_choice(){
+    var clear_choice = function (schemeObject, schemeDesigner, view, e){
+        // var objectParams = schemeObject.getParams();
+        
         total_price = 0;
         choose_places.clear();
         count_places = 0;
@@ -128,11 +131,12 @@
         
         for (var i = 0; i < all_objects.length; i++){
             if (all_objects[i].params.isSelected){
+                all_objects[i].params.isSelected = !all_objects[i].params.isSelected;
                 console.log(unescape(all_objects[i].params.sectorName), all_objects[i].params.row, all_objects[i].params.seat);
             }
             
         }
-    }
+    };
     /**
      * Render place function
      * @param {SchemeObject} schemeObject

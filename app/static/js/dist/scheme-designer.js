@@ -344,7 +344,7 @@ var SchemeDesigner;
                     }
                 }
             }
-            this.mapManager.drawMap();
+            // this.mapManager.drawMap();
             this.eventManager.sendEvent('afterRenderAll');
         };
         /**
@@ -400,7 +400,7 @@ var SchemeDesigner;
             var boundingRect = this.storageManager.getObjectsBoundingRect();
             this.view.drawBackground();
             this.view.getContext().drawImage(this.cacheView.getCanvas(), 0, 0, boundingRect.right, boundingRect.bottom);
-            this.mapManager.drawMap();
+            // this.mapManager.drawMap();
             return true;
         };
         /**
@@ -1623,97 +1623,99 @@ var SchemeDesigner;
          */
         EventManager.prototype.onContextMenu = function (e) {
         };
-        /**
-         * On mouse move
-         * @param e
-         */
-        EventManager.prototype.onMouseMove = function (e) {
-            if (this.leftButtonDown) {
-                var newCoordinates = this.getCoordinatesFromEvent(e);
-                var deltaX = Math.abs(newCoordinates.x - this.getLastClientX());
-                var deltaY = Math.abs(newCoordinates.y - this.getLastClientY());
-                // 1 - is click with offset - mis drag
-                if (deltaX > 1 || deltaY > 1) {
-                    this.isDragging = true;
-                    this.scheme.setCursorStyle('move');
-                }
-            }
-            if (!this.isDragging) {
-                // this.handleHover(e);
-            }
-            else {
-                this.scheme.getScrollManager().handleDragging(e);
-            }
-        };
-        /**
-         * Handling hover
-         * @param e
-         */
-        EventManager.prototype.handleHover = function (e) {
-            this.setLastClientPositionFromEvent(e);
-            var objects = this.findObjectsForEvent(e);
-            var mustReRender = false;
-            var hasNewHovers = false;
-            if (this.hoveredObjects.length) {
-                for (var _i = 0, _a = this.hoveredObjects; _i < _a.length; _i++) {
-                    var schemeHoveredObject = _a[_i];
-                    var alreadyHovered = false;
-                    for (var _b = 0, objects_2 = objects; _b < objects_2.length; _b++) {
-                        var schemeObject = objects_2[_b];
-                        if (schemeObject == schemeHoveredObject) {
-                            alreadyHovered = true;
-                        }
-                    }
-                    if (!alreadyHovered) {
-                        schemeHoveredObject.isHovered = false;
-                        var result = schemeHoveredObject.mouseLeave(e, this.scheme, this.scheme.getView());
-                        this.scheme.addChangedObject(schemeHoveredObject);
-                        this.sendEvent('mouseLeaveObject', schemeHoveredObject);
-                        if (result !== false) {
-                            mustReRender = true;
-                        }
-                        hasNewHovers = true;
-                    }
-                }
-            }
-            if (!this.hoveredObjects.length || hasNewHovers) {
-                for (var _c = 0, objects_3 = objects; _c < objects_3.length; _c++) {
-                    var schemeObject = objects_3[_c];
-                    schemeObject.isHovered = true;
-                    this.scheme.setCursorStyle(schemeObject.cursorStyle);
-                    var result = schemeObject.mouseOver(e, this.scheme, this.scheme.getView());
-                    if (result !== false) {
-                        mustReRender = true;
-                    }
-                    this.scheme.addChangedObject(schemeObject);
-                    this.sendEvent('mouseOverObject', schemeObject, e);
-                }
-            }
-            this.hoveredObjects = objects;
-            if (!objects.length) {
-                this.scheme.setCursorStyle(this.scheme.getDefaultCursorStyle());
-            }
-            if (mustReRender) {
-                this.scheme.requestRenderAll();
-                this.scheme.updateCache(true);
-            }
-        };
-        /**
-         * Mouse out
-         * @param e
-         */
-        EventManager.prototype.onMouseOut = function (e) {
-            this.setLastClientPositionFromEvent(e);
-            this.leftButtonDown = false;
-            this.isDragging = false;
-            this.scheme.requestRenderAll();
-        };
-        /**
-         * Mouse enter
-         * @param e
-         */
-        EventManager.prototype.onMouseEnter = function (e) {
-        };
+        // /**
+        //  * On mouse move
+        //  * @param e
+        //  */
+        // EventManager.prototype.onMouseMove = function (e) {
+        //     if (this.leftButtonDown) {
+        //         var newCoordinates = this.getCoordinatesFromEvent(e);
+        //         var deltaX = Math.abs(newCoordinates.x - this.getLastClientX());
+        //         var deltaY = Math.abs(newCoordinates.y - this.getLastClientY());
+        //         // 1 - is click with offset - mis drag
+        //         if (deltaX > 1 || deltaY > 1) {
+        //             this.isDragging = true;
+        //             this.scheme.setCursorStyle('move');
+        //         }
+        //     }
+        //     if (!this.isDragging) {
+        //         // this.handleHover(e);
+        //     }
+        //     else {
+        //         this.scheme.getScrollManager().handleDragging(e);
+        //     }
+        // };
+        // /**
+        //  * Handling hover
+        //  * @param e
+        //  */
+        // EventManager.prototype.handleHover = function (e) {
+        //     this.setLastClientPositionFromEvent(e);
+        //     var objects = this.findObjectsForEvent(e);
+        //     var mustReRender = false;
+        //     var hasNewHovers = false;
+        //     if (this.hoveredObjects.length) {
+        //         for (var _i = 0, _a = this.hoveredObjects; _i < _a.length; _i++) {
+        //             var schemeHoveredObject = _a[_i];
+        //             var alreadyHovered = false;
+        //             for (var _b = 0, objects_2 = objects; _b < objects_2.length; _b++) {
+        //                 var schemeObject = objects_2[_b];
+        //                 if (schemeObject == schemeHoveredObject) {
+        //                     alreadyHovered = true;
+        //                 }
+        //             }
+        //             if (!alreadyHovered) {
+        //                 schemeHoveredObject.isHovered = false;
+        //                 var result = schemeHoveredObject.mouseLeave(e, this.scheme, this.scheme.getView());
+        //                 this.scheme.addChangedObject(schemeHoveredObject);
+        //                 this.sendEvent('mouseLeaveObject', schemeHoveredObject);
+        //                 if (result !== false) {
+        //                     mustReRender = true;
+        //                 }
+        //                 hasNewHovers = true;
+        //             }
+        //         }
+        //     }
+        //     if (!this.hoveredObjects.length || hasNewHovers) {
+        //         for (var _c = 0, objects_3 = objects; _c < objects_3.length; _c++) {
+        //             var schemeObject = objects_3[_c];
+        //             schemeObject.isHovered = true;
+        //             this.scheme.setCursorStyle(schemeObject.cursorStyle);
+        //             var result = schemeObject.mouseOver(e, this.scheme, this.scheme.getView());
+        //             if (result !== false) {
+        //                 mustReRender = true;
+        //             }
+        //             this.scheme.addChangedObject(schemeObject);
+        //             this.sendEvent('mouseOverObject', schemeObject, e);
+        //         }
+        //     }
+        //     this.hoveredObjects = objects;
+        //     if (!objects.length) {
+        //         this.scheme.setCursorStyle(this.scheme.getDefaultCursorStyle());
+        //     }
+        //     if (mustReRender) {
+        //         this.scheme.requestRenderAll();
+        //         this.scheme.updateCache(true);
+        //     }
+        // };
+
+
+        // /**
+        //  * Mouse out
+        //  * @param e
+        //  */
+        // EventManager.prototype.onMouseOut = function (e) {
+        //     this.setLastClientPositionFromEvent(e);
+        //     this.leftButtonDown = false;
+        //     this.isDragging = false;
+        //     this.scheme.requestRenderAll();
+        // };
+        // /**
+        //  * Mouse enter
+        //  * @param e
+        //  */
+        // EventManager.prototype.onMouseEnter = function (e) {
+        // };
         /**
          * Zoom by wheel
          * @param e
