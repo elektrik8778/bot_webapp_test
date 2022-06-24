@@ -29,7 +29,7 @@ class Config(object):
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'ogg', 'mp4', 'avi'}
     SERVER_TIME_ZONE = os.environ.get('SERVER_TIME_ZONE') or 0
     BOT_NAME = os.environ.get('BOT_NAME')
-    MAX_PLACES = os.environ.get('MAX_PLACES')
+    MAX_PLACES = os.environ.get('MAX_PLACES') or 5
     # STREAM_LINK = os.environ.get('STREAM_LINK')
     # VIDGET_PREFIX = os.environ.get('VIDGET_PREFIX')
 

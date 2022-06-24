@@ -153,7 +153,7 @@ def theme_and_tint_to_rgb(wb, theme, tint):
 
 def create_placement(path, filename):
     wb = openpyxl.load_workbook(filename=os.path.join(path, filename))
-    sheet_places = wb['вариант 2']
+    sheet_places = wb['вариант 1']
     schemeData = []
     for r in sheet_places:
 

@@ -17,17 +17,11 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 
     <style>
-
-        
         .canvas-holder {
             width: 100%;
             height: 500px;
             position:relative;
         }
-        
-
-
-
     </style>
 </head>
 <body>
@@ -36,8 +30,11 @@
 
         <div style="text-align: center;">
             <section class="sticky-top">
-                <h2>{{ event.get_placement().get_place().name }}</h2>
-                <p>{{ event.get_placement().name }}</p>
+                <h2>{{ event.name }}</h2>
+                <p>
+                    {{ event.get_placement().get_place().name }}, {{ event.date.strftime("%d.%m.%y") }}, {{ event.time.strftime("%H:%M") }}
+                </p>
+{#                <p>{{ event.get_placement().name }}</p>#}
             </section>
 
         </div>
@@ -48,18 +45,18 @@
 
 
 
-    <div class="sticky-top">
-        <div class="well">
-            <div class="row">
-                <div class="col-sm-6" style="margin-bottom: 5px;">
-                    <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(10)">+</button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(-10)">-</button>
-                    <button type="button" class="btn btn-warning btn-sm" onclick="clear_choice()">Сбросить выбор</button>
-                </div>
-
-            </div>
-        </div>
-    </div>
+{#    <div class="sticky-top">#}
+{#        <div class="well">#}
+{#            <div class="row">#}
+{#                <div class="col-sm-6" style="margin-bottom: 5px;">#}
+{#                    <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(10)">+</button>#}
+{#                    <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(-10)">-</button>#}
+{#                    <button type="button" class="btn btn-warning btn-sm" onclick="clear_choice()">Сбросить выбор</button>#}
+{#                </div>#}
+{##}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
 
         <div style="position: relative;">
             <div class="canvas-holder" style="">
@@ -76,7 +73,7 @@
 </div>
 <script>
     var max_places = {{ max_places }};
-    console.log("max_places:", max_places);
+    {#console.log("max_places:", max_places);#}
     const bot = Telegram.WebApp;
     var total_price = 0;
     var choose_places = new Map([]);
@@ -86,14 +83,17 @@
         localStorage.clear()
         localStorage.fl = false
         }
-    if (localStorage.uid === undefined) {
-        localStorage.uid = bot.initDataUnsafe.user.id
-    }
+
+    console.log(localStorage.uid)
+    if (bot.initDataUnsafe.user)
+        if (localStorage.uid === undefined || localStorage.uid !== bot.initDataUnsafe.user.id)
+            localStorage.uid = bot.initDataUnsafe.user.id
+
     var uid = localStorage.uid;
-    console.log("user_tg_id:", uid);
+    {#console.log("user_tg_id:", uid);#}
 
     bot.MainButton.onClick(function () {
-        choose_places.set("user_tg_id", uid);
+        {#choose_places.set("user_tg_id", uid);#}
         (async () => {
             const rawResponse = await fetch('{{  server  }}/webappresponse', {
                 method: 'POST',
@@ -102,7 +102,10 @@
                   'Content-Type': 'application/json'
             },
 
-            body: JSON.stringify(Object.fromEntries(choose_places))
+            body: JSON.stringify({
+                seats: Object.fromEntries(choose_places),
+                uid: uid
+            })
           });
           const content = await rawResponse.json();
           console.log(content);
@@ -111,7 +114,7 @@
         bot.close();
     });
 
-    
+
 
     var backgroundLayer = new SchemeDesigner.Layer('background', {zIndex: 0, visible: false, active: false});
     var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 10});
@@ -120,21 +123,21 @@
 
     var clear_choice = function (schemeObject, schemeDesigner, view, e){
         // var objectParams = schemeObject.getParams();
-        
+
         total_price = 0;
         choose_places.clear();
         count_places = 0;
         bot.MainButton.hide()
         console.log(choose_places);
         console.log(total_price);
-        var all_objects = defaultLayer.getObjects(); 
-        
+        var all_objects = defaultLayer.getObjects();
+
         for (var i = 0; i < all_objects.length; i++){
             if (all_objects[i].params.isSelected){
                 all_objects[i].params.isSelected = !all_objects[i].params.isSelected;
                 console.log(unescape(all_objects[i].params.sectorName), all_objects[i].params.row, all_objects[i].params.seat);
             }
-            
+
         }
     };
     /**
@@ -165,14 +168,20 @@
         // } else if (isHovered) {
         //     context.fillStyle = 'green';
         //     context.strokeStyle = backgroundColor;
-        } 
+        }
+
+        if (!objectParams.active) {
+            context.lineWidth = 2;
+            context.fillStyle = 'white';
+            context.strokeStyle = backgroundColor;
+        }
 
         var relativeX = schemeObject.x;
         var relativeY = schemeObject.y;
 
         var width = schemeObject.getWidth();
         var height = schemeObject.getHeight();
-        
+
         if (!objectParams.isSelected) {
             var borderOffset = 4;
             relativeX = relativeX + borderOffset;
@@ -247,32 +256,24 @@
         context.fillText(objectParams.sectorName, schemeObject.getX(), schemeObject.getY());
     };
 
-    
 
     var clickOnPlace = function (schemeObject, schemeDesigner, view, e)
     {
         var objectParams = schemeObject.getParams();
-        console.log('e.objectParams:',e.view.objectData)
-        
-                 
-        if (count_places<5 || choose_places.has(objectParams.id)) {
+        {#console.log(objectParams)#}
+
+        if ((count_places<max_places || choose_places.has(objectParams.id)) && objectParams.renderFunction.name !== 'renderLabel') {
             objectParams.isSelected = !objectParams.isSelected;
 
             if (choose_places.has(objectParams.id)) {
                 choose_places.delete(objectParams.id);
                 count_places -=1;
             } else {
-                if (count_places<max_places){
-                    choose_places.set(objectParams.id, objectParams.price);
-                }
+                if (count_places<max_places)
+                    choose_places.set(objectParams.id, objectParams);
                 count_places +=1;
-            };
-
+            }
         }
-
-        
-        //objectParams.isSelected = !objectParams.isSelected;
-
     };
 
     /**
@@ -399,19 +400,17 @@
     }, false);
 
     canvas.addEventListener('schemeDesigner.clickOnObject', function (e) {
-        console.log('clickOnObject', e.detail.params.id, e.detail);
-        total_price = 0;
+        {#console.log('clickOnObject', e.detail.params.id, e.detail);#}
+        let total_price = 0;
         let placeId = e.detail.params.id;
         let placePrice = parseInt(e.detail.params.price, 10);
 
-        
+        choose_places.forEach(item => {total_price += item.price;});
 
-        choose_places.forEach(value => {
-                        total_price += value;
-        });
-        console.log('choose_places:',choose_places);
-        console.log('count_places:', count_places);
-        console.log('total_price:', total_price);
+        {#console.log('choose_places:',choose_places);#}
+        {#console.log('count_places:', count_places);#}
+        {#console.log('total_price:', total_price);#}
+
         bot.MainButton.setParams({
                 'text': total_price.toString(),
                 'color': '#00ff00',
@@ -419,7 +418,7 @@
                 'is_active': true,
                 'is_visible': true
             })
-        bot.MainButton.show()
+        total_price<=0 ? bot.MainButton.hide() : bot.MainButton.show()
     }, false);
 
     // canvas.addEventListener('schemeDesigner.mouseOverObject', function (e) {
