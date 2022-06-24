@@ -364,8 +364,7 @@ class Placement(db.Model):
             places = json.loads(placement.read().split('var schemeData = ')[1])
             for s in seats:
                 for p in places:
-                    if p['Seat'] == str(seats[s]["seat"]) and p['Row'] == str(seats[s]["row"]) and p['name_sec'] == str(
-                            seats[s]["sectorName"]):
+                    if p['Seat'] == str(s["seat"]) and p['Row'] == str(s["row"]) and p['name_sec'] == str(s["sectorName"]):
                         p['avail'] = free
         with open(path, 'w') as placement:
             placement.write(f'var schemeData = {json.dumps(places)}')

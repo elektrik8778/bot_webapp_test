@@ -8,7 +8,7 @@ import time
 import zipfile
 from datetime import datetime, timedelta
 from app import db
-from app import bot
+# from app import bot
 from app.admin import bp
 from app.models import User, Group, Tag, UserTag, ScheduledMessage, Placement
 from app.admin.forms import ChangeWebhookForm, ScheduledMessageCreateForm, SendTGMessageForm, SendGroupTGMessageForm,\

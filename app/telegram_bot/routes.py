@@ -1,4 +1,4 @@
-from app import application, db
+from app import db
 import requests
 from config import Config
 from app.telegram_bot import bp
@@ -13,23 +13,25 @@ from telegram import LabeledPrice
 from app.models import User, Event, Order
 from sqlalchemy.engine import CursorResult
 import json
+from telegram.ext import ApplicationBuilder
 
 
-application.add_handler(CommandHandler('start', handlers.start))
-application.add_handler(CommandHandler('help', handlers.help_command))
-application.add_handler(CommandHandler('events', handlers.events))
-application.add_handler(CommandHandler('ppay', handlers.send_pay))
+def set_bot_handlers(application):
+    application.add_handler(CommandHandler('start', handlers.start))
+    application.add_handler(CommandHandler('help', handlers.help_command))
+    application.add_handler(CommandHandler('events', handlers.events))
+    application.add_handler(CommandHandler('ppay', handlers.send_pay))
 
-application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handlers.echo))
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handlers.echo))
 
 
-application.add_handler(CallbackQueryHandler(pattern='help', callback=handlers.help))
-application.add_handler(CallbackQueryHandler(pattern='deleteMessage', callback=handlers.delete_message))
-application.add_handler(CallbackQueryHandler(pattern='event', callback=handlers.send_event))
+    application.add_handler(CallbackQueryHandler(pattern='help', callback=handlers.help))
+    application.add_handler(CallbackQueryHandler(pattern='deleteMessage', callback=handlers.delete_message))
+    application.add_handler(CallbackQueryHandler(pattern='event', callback=handlers.send_event))
 
-# payments
-application.add_handler(PreCheckoutQueryHandler(callback=payments.pre_checkout))
-application.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, callback=payments.successful_payment))
+    # payments
+    application.add_handler(PreCheckoutQueryHandler(callback=payments.pre_checkout))
+    application.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, callback=payments.successful_payment))
 
 
 if (addr := os.environ.get("TG_ADDR")) != "":
@@ -40,6 +42,8 @@ if (addr := os.environ.get("TG_ADDR")) != "":
 
 @bp.route('/telegram', methods=['GET', 'POST'])
 async def telegram():
+    application = ApplicationBuilder().token(Config.TG_TOKEN).build()
+    set_bot_handlers(application)
     update = Update.de_json(request.get_json(force=True), bot=application.bot)
     async with application:
         await application.process_update(update)
@@ -48,6 +52,9 @@ async def telegram():
 
 @bp.route('/webappresponse', methods=['POST'])
 async def post_response():
+    application = ApplicationBuilder().token(Config.TG_TOKEN).build()
+    set_bot_handlers(application)
+    bot = application.bot
     eid = int(request.referrer.split('/')[4])
     seats = request.json['seats']
     uid = request.json['uid']
@@ -71,7 +78,7 @@ async def post_response():
 
         result: CursorResult = db.session.execute(query_string)
         if len(result.all()):
-            await application.bot.send_message(chat_id=user.tg_id,
+            await bot.send_message(chat_id=user.tg_id,
                                                text=f'Билет в секции *{seats[s]["sectorName"]}* с местом *{seats[s]["seat"]}* в ряду *{seats[s]["row"]}* уже куплен другим клиентом, выберите, пожалуйста, другое место.',
                                                parse_mode=ParseMode.MARKDOWN)
             return 'ok'
@@ -88,19 +95,27 @@ async def post_response():
     db.session.add(order)
     db.session.commit()
 
-    # помечаем билеты в файле js как недоступные
-    event.get_placement().set_seats_busy_free(seats, free=False)
-
     # отправляем кнопку оплаты
-    prices = [LabeledPrice(label=f'Ряд {s["row"]}, место {s["seat"]}', amount=(int(s["price"]) * 100)) for s in order.seats]
-    await application.bot.send_invoice(chat_id=uid,
-                                       title=f'{event.name}',
-                                       description=f'{event.get_place().name}, {event.date.strftime("%d.%m.%y")}, {event.time.strftime("%H:%M")}. Оплатите счет ниже в течении 20 минут. Спустя 20 минут бронь билетов будет анулирована.',
-                                       payload=f'{event.id}_{user.id}',
-                                       provider_token=(os.environ.get('PAYMENT_TOKEN')),
-                                       currency='RUB',
-                                       prices=prices,
-                                       protect_content=True,
-                                       need_phone_number=False,
-                                       )
+    try:
+        prices = [LabeledPrice(label=f'Ряд {s["row"]}, место {s["seat"]}', amount=(int(s["price"]) * 100)) for s in order.seats]
+        await bot.send_invoice(chat_id=uid,
+                                           title=f'{event.name}',
+                                           description=f'{event.get_place().name}, {event.date.strftime("%d.%m.%y")}, {event.time.strftime("%H:%M")}. Оплатите счет ниже в течении 20 минут. Спустя 20 минут бронь билетов будет анулирована.',
+                                           payload=f'{event.id}_{user.id}',
+                                           provider_token=(os.environ.get('PAYMENT_TOKEN')),
+                                           currency='RUB',
+                                           prices=prices,
+                                           protect_content=True,
+                                           need_phone_number=False,
+                                           )
+
+        # помечаем билеты в файле js как недоступные
+        event.get_placement().set_seats_busy_free(order.seats, free=False)
+    except:
+        db.session.delete(order)
+        db.session.commit()
+        await bot.send_message(chat_id=user.tg_id,
+                                           text=f'Произошла ошибка, попробуйте еще раз',
+                                           parse_mode=ParseMode.MARKDOWN)
+
     return 'ok'

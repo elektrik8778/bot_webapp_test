@@ -19,8 +19,8 @@ login.login_message = u'Пожалуйста, авторизуйтесь, что
 cors = CORS()
 bootstrap = Bootstrap()
 
-application = ApplicationBuilder().token(Config.TG_TOKEN).build()
-bot = application.bot
+# application = ApplicationBuilder().token(Config.TG_TOKEN).build()
+# bot = application.bot
 
 # Enable logging
 logging.basicConfig(

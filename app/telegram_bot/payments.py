@@ -1,7 +1,7 @@
 from telegram.ext import CallbackContext
 
 from app.telegram_bot.helpers import with_app_context
-from app import db, application
+from app import db
 # from app.models import UserTrip
 from telegram import Update
 from datetime import datetime
