@@ -12,6 +12,7 @@ import openpyxl
 from openpyxl.cell import Cell
 from openpyxl import styles
 from datetime import datetime
+from app.telegram_bot import texts
 
 
 @with_app_context
@@ -35,7 +36,8 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
     #     chat_id=update.effective_chat.id,
     #     text="I'm a bot, please talk to me!"
     # )
-    await update.effective_message.reply_text('Привет!')
+    await update.effective_message.reply_text(text=texts.greeting(user),
+                                              parse_mode=ParseMode.MARKDOWN)
 
 
 @with_app_context
