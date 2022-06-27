@@ -22,20 +22,22 @@
             {{ event_form.poster.label(class='form-label') }}
             {{ event_form.poster(class='form-control') }}
 
-            {% if event.poster['files'] %}
-                <div class="row">
-                    {% for f in event.poster['files'] %}
-                        <div class="col-auto position-relative">
-                            <img
-                                    src="{{ url_for('static', filename='uploads/events/'+event.id|string+'/posters/'+f['filename']) }}"
-                                    width="200"
-                            >
-                            <a class="btn btn-danger"
-                               href="{{ url_for('admin.del_poster_file', eid=event.id, filename=f['filename']) }}"
-                               style="position: absolute; top: 0; right: 5%;">Х</a>
-                        </div>
-                    {% endfor %}
-                </div>
+            {% if event %}
+                {% if event.poster['files'] %}
+                    <div class="row">
+                        {% for f in event.poster['files'] %}
+                            <div class="col-auto position-relative">
+                                <img
+                                        src="{{ url_for('static', filename='uploads/events/'+event.id|string+'/posters/'+f['filename']) }}"
+                                        width="200"
+                                >
+                                <a class="btn btn-danger"
+                                   href="{{ url_for('admin.del_poster_file', eid=event.id, filename=f['filename']) }}"
+                                   style="position: absolute; top: 0; right: 5%;">Х</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             {% endif %}
 
             <label for="event-place">Площадка</label>
