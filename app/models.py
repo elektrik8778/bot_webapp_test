@@ -7,8 +7,8 @@ from time import time
 from telegram import Update, WebAppInfo, InlineKeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, \
     ReplyKeyboardRemove, KeyboardButton, InputMediaVideo, InputMediaPhoto, LabeledPrice
 from telegram.constants import ParseMode
-from googleapiclient.discovery import build
-from google.oauth2 import service_account
+# from googleapiclient.discovery import build
+# from google.oauth2 import service_account
 import os
 import json
 
