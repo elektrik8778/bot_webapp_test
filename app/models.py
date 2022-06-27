@@ -382,6 +382,10 @@ class Order(db.Model):
     price = db.Column(db.Integer)
     paid = db.Column(db.Boolean, default=False)
     invoice_msg = db.Column(db.Integer)
+    pre_checkout_query_id = db.Column(db.Text)
+    provider_payment_charge_id = db.Column(db.Text)
+    telegram_payment_charge_id = db.Column(db.Text)
+    payment_date = db.Column(db.DateTime)
 
     def cancel(self):
         self.get_event().get_placement().set_seats_busy_free(seats=self.seats, free=True)

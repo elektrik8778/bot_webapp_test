@@ -100,6 +100,7 @@ async def post_response():
     db.session.commit()
 
     # отправляем кнопку оплаты
+    need_phone = False if user.phone else True
     try:
         prices = [LabeledPrice(label=f'Ряд {s["row"]}, место {s["seat"]}', amount=(int(s["price"]) * 100)) for s in order.seats]
         pay_btn = InlineKeyboardButton(text=f'Оплатить билеты', pay=True)
@@ -108,12 +109,12 @@ async def post_response():
         response = await bot.send_invoice(chat_id=uid,
                                           title=f'{event.name}',
                                           description=f'{event.get_place().name}, {event.date.strftime("%d.%m.%y")}, {event.time.strftime("%H:%M")}. Оплатите билеты в течении 20 минут. Либо бронь будет анулирована автоматически.',
-                                          payload=f'{event.id}_{user.id}',
+                                          payload=f'{order.id}',
                                           provider_token=(os.environ.get('PAYMENT_TOKEN')),
                                           currency='RUB',
                                           prices=prices,
                                           protect_content=True,
-                                          need_phone_number=False,
+                                          need_phone_number=need_phone,
                                           reply_markup=reply_markup,
                                           )
         order.invoice_msg = response.message_id
