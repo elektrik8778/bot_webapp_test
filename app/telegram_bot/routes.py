@@ -28,7 +28,7 @@ def set_bot_handlers(application):
     application.add_handler(CommandHandler('events', handlers.events))
     application.add_handler(CommandHandler('ppay', handlers.send_pay))
 
-    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handlers.echo))
+    # application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handlers.echo))
 
     application.add_handler(CallbackQueryHandler(pattern='help', callback=handlers.help))
     application.add_handler(CallbackQueryHandler(pattern='deleteMessage', callback=handlers.delete_message))
