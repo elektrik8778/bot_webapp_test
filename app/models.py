@@ -12,6 +12,7 @@ from google.oauth2 import service_account
 import os
 import json
 
+
 @login.user_loader
 def load_user(id):
     return User.query.get(int(id))
@@ -380,3 +381,8 @@ class Order(db.Model):
     seats = db.Column(db.ARRAY(db.JSON))
     price = db.Column(db.Integer)
     paid = db.Column(db.Boolean, default=False)
+    invoice_msg = db.Column(db.Integer)
+
+
+    def get_user(self) -> User:
+        return User.query.get(self.user)

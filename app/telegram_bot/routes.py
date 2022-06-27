@@ -9,11 +9,17 @@ import os
 from flask import request
 from pprint import pprint
 from telegram.ext import CommandHandler, MessageHandler, filters, CallbackQueryHandler, PreCheckoutQueryHandler
-from telegram import LabeledPrice
+from telegram import LabeledPrice, InlineKeyboardButton, InlineKeyboardMarkup
 from app.models import User, Event, Order
 from sqlalchemy.engine import CursorResult
 import json
 from telegram.ext import ApplicationBuilder
+
+
+def get_bot():
+    application = ApplicationBuilder().token(Config.TG_TOKEN).build()
+    set_bot_handlers(application)
+    return application.bot
 
 
 def set_bot_handlers(application):
@@ -23,7 +29,6 @@ def set_bot_handlers(application):
     application.add_handler(CommandHandler('ppay', handlers.send_pay))
 
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handlers.echo))
-
 
     application.add_handler(CallbackQueryHandler(pattern='help', callback=handlers.help))
     application.add_handler(CallbackQueryHandler(pattern='deleteMessage', callback=handlers.delete_message))
@@ -52,9 +57,7 @@ async def telegram():
 
 @bp.route('/webappresponse', methods=['POST'])
 async def post_response():
-    application = ApplicationBuilder().token(Config.TG_TOKEN).build()
-    set_bot_handlers(application)
-    bot = application.bot
+    bot = get_bot()
     eid = int(request.referrer.split('/')[4])
     seats = request.json['seats']
     uid = request.json['uid']
@@ -98,20 +101,26 @@ async def post_response():
     # отправляем кнопку оплаты
     try:
         prices = [LabeledPrice(label=f'Ряд {s["row"]}, место {s["seat"]}', amount=(int(s["price"]) * 100)) for s in order.seats]
-        await bot.send_invoice(chat_id=uid,
-                                           title=f'{event.name}',
-                                           description=f'{event.get_place().name}, {event.date.strftime("%d.%m.%y")}, {event.time.strftime("%H:%M")}. Оплатите счет ниже в течении 20 минут. Спустя 20 минут бронь билетов будет анулирована.',
-                                           payload=f'{event.id}_{user.id}',
-                                           provider_token=(os.environ.get('PAYMENT_TOKEN')),
-                                           currency='RUB',
-                                           prices=prices,
-                                           protect_content=True,
-                                           need_phone_number=False,
-                                           )
-
+        pay_btn = InlineKeyboardButton(text=f'Оплатить билеты', pay=True)
+        cancel_btn = InlineKeyboardButton(text='Отменить заказ', callback_data=f'cancelorder_{order.id}')
+        reply_markup = InlineKeyboardMarkup(inline_keyboard=[[pay_btn],[cancel_btn]])
+        response = await bot.send_invoice(chat_id=uid,
+                                          title=f'{event.name}',
+                                          description=f'{event.get_place().name}, {event.date.strftime("%d.%m.%y")}, {event.time.strftime("%H:%M")}. Оплатите билеты в течении 20 минут. Либо бронь будет анулирована автоматически.',
+                                          payload=f'{event.id}_{user.id}',
+                                          provider_token=(os.environ.get('PAYMENT_TOKEN')),
+                                          currency='RUB',
+                                          prices=prices,
+                                          protect_content=True,
+                                          need_phone_number=False,
+                                          reply_markup=reply_markup,
+                                          )
+        order.invoice_msg = response.message_id
+        db.session.commit()
         # помечаем билеты в файле js как недоступные
         event.get_placement().set_seats_busy_free(order.seats, free=False)
-    except:
+    except Exception as e:
+        print(e)
         db.session.delete(order)
         db.session.commit()
         await bot.send_message(chat_id=user.tg_id,

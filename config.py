@@ -27,9 +27,11 @@ class Config(object):
     UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'uploads')
     STATIC_FOLDER = os.path.join(basedir, 'app', 'static')
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'ogg', 'mp4', 'avi'}
-    SERVER_TIME_ZONE = os.environ.get('SERVER_TIME_ZONE') or 0
+    SERVER_TIME_ZONE = os.environ.get('SERVER_TIME_ZONE') or 5
     BOT_NAME = os.environ.get('BOT_NAME')
     MAX_PLACES = os.environ.get('MAX_PLACES') or 5
+    BOOKING_FREEZE_INTERVAL = os.environ.get('BOOKING_FREEZE_INTERVAL') or 20
+    DB_TIMEZONE_PATCH = os.environ.get('DB_TIMEZONE_PATCH') or 0
     # STREAM_LINK = os.environ.get('STREAM_LINK')
     # VIDGET_PREFIX = os.environ.get('VIDGET_PREFIX')
 
