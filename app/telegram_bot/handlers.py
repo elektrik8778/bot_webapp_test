@@ -1,7 +1,7 @@
 import json
 import os
 from app import db
-from app.models import User, Event, Group
+from app.models import User, Event, Group, Order
 from telegram import Update, WebAppInfo, InlineKeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, \
     ReplyKeyboardRemove, KeyboardButton, InputMediaVideo, InputMediaPhoto, LabeledPrice
 from config import Config
@@ -91,6 +91,13 @@ async def events(update: Update, context: CallbackContext.DEFAULT_TYPE):
 async def send_event(update: Update, context: CallbackContext.DEFAULT_TYPE):
     await Event.query.get(int(update.callback_query.data.split('_')[-1])).send_info(update, context)
     return 'ok'
+
+
+@with_app_context
+async def cancel_order(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    if order := Order.query.get(int(update.callback_query.data.split('_')[-1])):
+        order.cancel()
+    await update.effective_message.delete()
 
 
 @with_app_context

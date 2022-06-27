@@ -221,6 +221,46 @@ class Account(db.Model):
     # инн
 
 
+class Place(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+    city = db.Column(db.Text)
+    addr = db.Column(db.Text)
+
+    def get_placements(self):
+        return Placement.query.filter(Placement.place == self.id).all()
+
+
+class Placement(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.Text)
+    place = db.Column(db.Integer, db.ForeignKey('place.id'))
+    placement = db.Column(db.ARRAY(db.JSON))
+    excel_filename = db.Column(db.Text)
+
+    def get_place(self) -> Place:
+        return Place.query.get(self.place)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
+    def set_seats_busy_free(self, seats, free=False):
+        places = None
+        path = os.path.join(Config.UPLOAD_FOLDER, 'placements', str(self.id), self.excel_filename.split('.')[0] + '.js')
+        with open(path, 'r') as placement:
+            places = json.loads(placement.read().split('var schemeData = ')[1])
+            for s in seats:
+                for p in places:
+                    if p['Seat'] == str(s["seat"]) and p['Row'] == str(s["row"]) and p['name_sec'] == str(s["sectorName"]):
+                        p['avail'] = free
+        with open(path, 'w') as placement:
+            placement.write(f'var schemeData = {json.dumps(places)}')
+
+
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text)
@@ -324,51 +364,11 @@ class Event(db.Model):
         db.session.commit()
         return 'ok'
 
-    def get_placement(self):
+    def get_placement(self) -> Placement:
         return Placement.query.get(self.placement)
-
-    def get_place(self):
-        return Place.query.get(self.place)
-
-
-class Place(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.Text)
-    description = db.Column(db.Text)
-    city = db.Column(db.Text)
-    addr = db.Column(db.Text)
-
-    def get_placements(self):
-        return Placement.query.filter(Placement.place == self.id).all()
-
-
-class Placement(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.Text)
-    place = db.Column(db.Integer, db.ForeignKey('place.id'))
-    placement = db.Column(db.ARRAY(db.JSON))
-    excel_filename = db.Column(db.Text)
 
     def get_place(self) -> Place:
         return Place.query.get(self.place)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name
-        }
-
-    def set_seats_busy_free(self, seats, free=False):
-        places = None
-        path = os.path.join(Config.UPLOAD_FOLDER, 'placements', str(self.id), self.excel_filename.split('.')[0] + '.js')
-        with open(path, 'r') as placement:
-            places = json.loads(placement.read().split('var schemeData = ')[1])
-            for s in seats:
-                for p in places:
-                    if p['Seat'] == str(s["seat"]) and p['Row'] == str(s["row"]) and p['name_sec'] == str(s["sectorName"]):
-                        p['avail'] = free
-        with open(path, 'w') as placement:
-            placement.write(f'var schemeData = {json.dumps(places)}')
 
 
 class Order(db.Model):
@@ -383,6 +383,13 @@ class Order(db.Model):
     paid = db.Column(db.Boolean, default=False)
     invoice_msg = db.Column(db.Integer)
 
+    def cancel(self):
+        self.get_event().get_placement().set_seats_busy_free(seats=self.seats, free=True)
+        db.session.delete(self)
+        db.session.commit()
+
+    def get_event(self) -> Event:
+        return Event.query.get(self.event)
 
     def get_user(self) -> User:
         return User.query.get(self.user)
