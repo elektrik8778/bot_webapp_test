@@ -10,15 +10,15 @@ from datetime import datetime
 async def pre_checkout(update: Update, context: CallbackContext.DEFAULT_TYPE):
     from app.telegram_bot.routes import get_bot
     bot = get_bot()
-    order: Order = Order.query.get(int(update.pre_checkout_query.invoice_payload))
+    order: Order = Order.query.get(int(update.pre_checkout_query.invoice_payload.split('_')[-1]))
     if order:
         if not order.paid:
             order.pre_checkout_query_id = str(update.pre_checkout_query.id)
             if update.pre_checkout_query.order_info.phone_number:
                 order.get_user().phone = update.pre_checkout_query.order_info.phone_number
             db.session.commit()
-            await bot.answer_pre_checkout_query(pre_checkout_query_id=update.pre_checkout_query.id,
-                                                ok=True)
+            response = await bot.answer_pre_checkout_query(pre_checkout_query_id=update.pre_checkout_query.id,
+                                                           ok=True)
         else:
             await bot.answer_pre_checkout_query(pre_checkout_query_id=update.pre_checkout_query.id,
                                                 ok=False,
@@ -34,7 +34,7 @@ async def pre_checkout(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
 @with_app_context
 async def successful_payment(update: Update, context:CallbackContext.DEFAULT_TYPE):
-    order: Order = Order.query.get(int(update.effective_message.successful_payment.invoice_payload))
+    order: Order = Order.query.get(int(update.effective_message.successful_payment.invoice_payload.split('_')[-1]))
     order.paid = True
     order.price = update.effective_message.successful_payment.total_amount/100
     order.payment_date = datetime.now()

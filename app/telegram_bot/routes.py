@@ -101,21 +101,37 @@ async def post_response():
 
     # отправляем кнопку оплаты
     need_phone = False if user.phone else True
+    need_email = False if user.email else True
     try:
         prices = [LabeledPrice(label=f'Ряд {s["row"]}, место {s["seat"]}', amount=(int(s["price"]) * 100)) for s in order.seats]
         pay_btn = InlineKeyboardButton(text=f'Оплатить билеты', pay=True)
         cancel_btn = InlineKeyboardButton(text='Отменить заказ', callback_data=f'cancelorder_{order.id}')
         reply_markup = InlineKeyboardMarkup(inline_keyboard=[[pay_btn],[cancel_btn]])
+        provider_data = {'receipt': {'items': []}}
+        for s in order.seats:
+            provider_data['receipt']['items'].append({
+                'description': f'Ряд {s["row"]}, место {s["seat"]}',
+                'quantity': '1.00',
+                'amount': {
+                    'value': int(s["price"]),
+                    'currency': 'RUB'
+                },
+                'vat_code': 1
+            })
         response = await bot.send_invoice(chat_id=uid,
                                           title=f'{event.name}',
                                           description=f'{event.get_place().name}, {event.date.strftime("%d.%m.%y")}, {event.time.strftime("%H:%M")}. Оплатите билеты в течении 20 минут. Либо бронь будет анулирована автоматически.',
-                                          payload=f'{order.id}',
+                                          payload=f'order_{order.id}',
                                           provider_token=(os.environ.get('PAYMENT_TOKEN')),
                                           currency='RUB',
                                           prices=prices,
                                           protect_content=True,
                                           need_phone_number=need_phone,
+                                          send_phone_number_to_provider=True,
+                                          need_email=need_email,
+                                          send_email_to_provider=True,
                                           reply_markup=reply_markup,
+                                          provider_data=json.dumps(provider_data)
                                           )
         order.invoice_msg = response.message_id
         db.session.commit()
