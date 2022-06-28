@@ -398,3 +398,14 @@ class Order(db.Model):
 
     def get_user(self) -> User:
         return User.query.get(self.user)
+
+
+class UserBonus(db.Model):
+    def __init__(self):
+        self.date = datetime.now()
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+    amount = db.Column(db.Integer)
+    reason = db.Column(db.Text)
+    date = db.Column(db.DateTime)
+

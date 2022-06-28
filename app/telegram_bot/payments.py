@@ -1,7 +1,7 @@
 from telegram.ext import CallbackContext
 from app.telegram_bot.helpers import with_app_context
-from app import db
-from app.models import Order
+from app import db, Config
+from app.models import Order, UserBonus
 from telegram import Update
 from datetime import datetime
 
@@ -38,6 +38,13 @@ async def successful_payment(update: Update, context:CallbackContext.DEFAULT_TYP
     order.payment_date = datetime.now()
     order.provider_payment_charge_id = update.effective_message.successful_payment.provider_payment_charge_id
     order.telegram_payment_charge_id = update.effective_message.successful_payment.telegram_payment_charge_id
+    db.session.commit()
+
+    bonus = UserBonus()
+    bonus.user = order.get_user().id
+    bonus.amount = int(round(order.price/100*int(Config.BONUS_FOR_ORDER)))
+    bonus.reason = f'Оплата заказа #{order.id} {order.get_event().name}'
+    db.session.add(bonus)
     db.session.commit()
 
     # отправляем пользователю подтверждение платежа и билеты

@@ -107,7 +107,6 @@ async def cancel_order(update: Update, context: CallbackContext.DEFAULT_TYPE):
     return 'ok'
 
 
-
 @with_app_context
 async def help(update: Update, context: CallbackContext.DEFAULT_TYPE):
     user = User.query.filter(User.tg_id == update.callback_query.from_user.id).first()

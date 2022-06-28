@@ -32,6 +32,8 @@ class Config(object):
     MAX_PLACES = os.environ.get('MAX_PLACES') or 5
     BOOKING_FREEZE_INTERVAL = os.environ.get('BOOKING_FREEZE_INTERVAL') or 20
     DB_TIMEZONE_PATCH = os.environ.get('DB_TIMEZONE_PATCH') or 0
+
+    BONUS_FOR_ORDER = os.environ.get('BONUS_FOR_ORDER') or 1 # in percents (10%)
     # STREAM_LINK = os.environ.get('STREAM_LINK')
     # VIDGET_PREFIX = os.environ.get('VIDGET_PREFIX')
 
