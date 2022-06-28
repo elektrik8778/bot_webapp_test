@@ -70,7 +70,7 @@ async def events(update: Update, context: CallbackContext.DEFAULT_TYPE):
     events: Event = Event.query.order_by(Event.date, Event.time).all()
     buttons = []
     for index, i in enumerate(events):
-        text = f'{index + 1}) {i.date} {i.name}'
+        text = f'{i.name} ({i.date.strftime("%d.%m.%y")}, {i.time.strftime("%H:%M")})'
         callback = f'event_{i.id}'
         buttons.append(
             InlineKeyboardButton(text=text,
@@ -99,8 +99,13 @@ async def hide_msg(update: Update, context: CallbackContext.DEFAULT_TYPE):
 @with_app_context
 async def cancel_order(update: Update, context: CallbackContext.DEFAULT_TYPE):
     if order := Order.query.get(int(update.callback_query.data.split('_')[-1])):
-        order.cancel()
-    await update.effective_message.delete()
+        if not order.paid:
+            order.cancel()
+            await update.effective_message.delete()
+        else:
+            await update.effective_message.reply_text('Нельзя отменить оплаченный заказ.')
+    return 'ok'
+
 
 
 @with_app_context

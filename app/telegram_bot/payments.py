@@ -27,8 +27,6 @@ async def pre_checkout(update: Update, context: CallbackContext.DEFAULT_TYPE):
         await bot.answer_pre_checkout_query(pre_checkout_query_id=update.pre_checkout_query.id,
                                             ok=False,
                                             error_message='Вы просрочили оплату данного заказа.')
-        # await update.effective_message.reply_text('Вы просрочили оплату вашего заказа.')
-        # await update.effective_message.delete()
     return 'ok'
 
 
@@ -43,12 +41,6 @@ async def successful_payment(update: Update, context:CallbackContext.DEFAULT_TYP
     db.session.commit()
 
     # отправляем пользователю подтверждение платежа и билеты
-    # go_btn = [InlineKeyboardButton(text='Пошли гулять', callback_data=f'letswalk_{user_trip.id}')]
-    # bot.send_message(chat_id=user_trip.get_user().tg_id,
-    #                  text='user_trip.get_trip().success_payment_text',
-    #                  reply_markup=InlineKeyboardMarkup([go_btn]),
-    #                  protect_content=True,
-    #                  parse_mode=ParseMode.MARKDOWN)
     await update.effective_message.reply_text('Заказ успешно оплачен. Ваши билеты в Меню -> Мои билеты.')
-    # await update.effective_message.delete()
+
     return 'ok'
