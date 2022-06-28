@@ -12,7 +12,6 @@ import openpyxl
 from openpyxl.cell import Cell
 from openpyxl import styles
 from datetime import datetime
-from app.telegram_bot import texts
 
 
 @with_app_context
@@ -67,6 +66,7 @@ async def help_command(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
 @with_app_context
 async def events(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    from app.telegram_bot import texts, buttons as btns
     chat_id = int(update.message.from_user.id)
     message_id = int(update.message.message_id)
     sender: User = User.query.filter(User.tg_id == chat_id).first()
@@ -83,6 +83,7 @@ async def events(update: Update, context: CallbackContext.DEFAULT_TYPE):
                                  callback_data=callback)
         )
 
+    buttons.append(btns.hide_btn())
 
     await update.message.reply_text(
         text='Список предстоящих концертов:',
@@ -92,6 +93,12 @@ async def events(update: Update, context: CallbackContext.DEFAULT_TYPE):
 @with_app_context
 async def send_event(update: Update, context: CallbackContext.DEFAULT_TYPE):
     await Event.query.get(int(update.callback_query.data.split('_')[-1])).send_info(update, context)
+    return 'ok'
+
+
+@with_app_context
+async def hide_msg(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    await update.effective_message.delete()
     return 'ok'
 
 

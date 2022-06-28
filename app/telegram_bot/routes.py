@@ -34,6 +34,7 @@ def set_bot_handlers(application):
     application.add_handler(CallbackQueryHandler(pattern='deleteMessage', callback=handlers.delete_message))
     application.add_handler(CallbackQueryHandler(pattern='event', callback=handlers.send_event))
     application.add_handler(CallbackQueryHandler(pattern='cancelorder', callback=handlers.cancel_order))
+    application.add_handler(CallbackQueryHandler(pattern='hidemsg', callback=handlers.hide_msg))
 
     # payments
     application.add_handler(PreCheckoutQueryHandler(callback=payments.pre_checkout))

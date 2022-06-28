@@ -303,6 +303,7 @@ class Event(db.Model):
         db.session.commit()
 
     async def send_info(self, update, context):
+        from app.telegram_bot import buttons as btns
         posters = self.poster['files']
         media_group = []
         poster_cat = os.path.join(Config.UPLOAD_FOLDER, 'events', str(self.id), 'posters')
@@ -328,7 +329,7 @@ class Event(db.Model):
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'*{self.name}*\n{self.date.strftime("%d.%m.%y")}, {self.time.strftime("%H:%M")}\n\n{self.description}',
-                reply_markup=InlineKeyboardMarkup([btn]),
+                reply_markup=InlineKeyboardMarkup([btn, [btns.hide_btn()]]),
                 protect_content=True,
                 parse_mode=ParseMode.MARKDOWN)
         elif len(posters) == 1:
@@ -338,7 +339,7 @@ class Event(db.Model):
                     chat_id=update.effective_chat.id,
                     photo=media,
                     caption=f'*{self.name}*\n{self.date.strftime("%d.%m.%y")}, {self.time.strftime("%H:%M")}\n\n{self.description}',
-                    reply_markup=InlineKeyboardMarkup([btn]),
+                    reply_markup=InlineKeyboardMarkup([btn, [btns.hide_btn()]]),
                     protect_content=True,
                     parse_mode=ParseMode.MARKDOWN)
                 posters[0]['file_id'] = response.photo[-1].file_id
@@ -347,7 +348,7 @@ class Event(db.Model):
                     chat_id=update.effective_chat.id,
                     video=media,
                     caption=f'*{self.name}*\n{self.date.strftime("%d.%m.%y")}, {self.time.strftime("%H:%M")}\n\n{self.description}',
-                    reply_markup=InlineKeyboardMarkup([btn]),
+                    reply_markup=InlineKeyboardMarkup([btn, [btns.hide_btn()]]),
                     protect_content=True,
                     parse_mode=ParseMode.MARKDOWN)
                 posters[0]['file_id'] = response.video.file_id
@@ -355,7 +356,7 @@ class Event(db.Model):
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'*{self.name}*\n{self.date.strftime("%d.%m.%y")}, {self.time.strftime("%H:%M")}\n\n{self.description}',
-                reply_markup=InlineKeyboardMarkup([btn]),
+                reply_markup=InlineKeyboardMarkup([btn, [btns.hide_btn()]]),
                 protect_content=True,
                 parse_mode=ParseMode.MARKDOWN)
         self.poster = ''
