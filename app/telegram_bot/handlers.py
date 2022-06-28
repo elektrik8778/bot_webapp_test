@@ -1,17 +1,11 @@
-import json
-import os
 from app import db
 from app.models import User, Event, Group, Order
-from telegram import Update, WebAppInfo, InlineKeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, \
-    ReplyKeyboardRemove, KeyboardButton, InputMediaVideo, InputMediaPhoto, LabeledPrice
-from config import Config
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice
 from app.telegram_bot.helpers import with_app_context
 from telegram.ext import CallbackContext
 from telegram.constants import ParseMode
-import openpyxl
-from openpyxl.cell import Cell
-from openpyxl import styles
 from datetime import datetime
+from app.telegram_bot import texts
 
 
 @with_app_context
@@ -66,7 +60,7 @@ async def help_command(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
 @with_app_context
 async def events(update: Update, context: CallbackContext.DEFAULT_TYPE):
-    from app.telegram_bot import texts, buttons as btns
+    from app.telegram_bot import buttons as btns
     chat_id = int(update.message.from_user.id)
     message_id = int(update.message.message_id)
     sender: User = User.query.filter(User.tg_id == chat_id).first()
