@@ -127,6 +127,7 @@ async def post_response():
                                           currency='RUB',
                                           prices=prices,
                                           protect_content=True,
+                                          start_parameter=f'order_{order.id}',
                                           need_phone_number=need_phone,
                                           send_phone_number_to_provider=True,
                                           need_email=need_email,
