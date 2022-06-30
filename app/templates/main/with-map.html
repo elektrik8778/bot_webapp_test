@@ -366,8 +366,8 @@
      * Show scheme
      */
     schemeDesigner.render();
-    schemeDesigner.scrollManager.scroll(parseInt(screen.width/2), 0)
-
+    {#schemeDesigner.scrollManager.scroll(parseInt(screen.width/2), 0)#}
+    schemeDesigner.scrollManager.toCenter();
 
 
     canvas.addEventListener('schemeDesigner.beforeRenderAll', function (e) {
