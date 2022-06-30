@@ -3,18 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Зал {{ event.get_placement().get_place().name }}, рассадка {{ event.get_placement().name }}</title>
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css')  }}">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-<!--    <script src="../dist/scheme-designer.min.js?24"></script>-->
-    <script src="{{ url_for('static', filename='js/dist/scheme-designer.min.js')  }}"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- data for scheme -->
+    <script src="{{ url_for('static', filename='js/dist/scheme-designer.min.js')  }}"></script>
     <script src="{{ url_for('static', filename='uploads/placements/'+event.placement|string+'/'+event.get_placement().excel_filename.split('.')[0]+'.js')  }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 
     <style>
         .canvas-holder {
@@ -25,25 +18,17 @@
     </style>
 </head>
 <body>
-<div class="container-fluid">
-
-
-        <div style="text-align: center;">
-            <section class="sticky-top">
-                <h2>{{ event.name }}</h2>
-                <p>
-                    {{ event.get_placement().get_place().name }}, {{ event.date.strftime("%d.%m.%y") }}, {{ event.time.strftime("%H:%M") }}
-                </p>
-{#                <p>{{ event.get_placement().name }}</p>#}
-            </section>
-
-        </div>
-
-
+<div class="container">
+    <div style="text-align: center;">
+        <section class="sticky-top">
+            <h2>{{ event.name }}</h2>
+            <p>
+                {{ event.get_placement().get_place().name }}, {{ event.date.strftime("%d.%m.%y") }}, {{ event.time.strftime("%H:%M") }}
+            </p>
+        </section>
+    </div>
 
     <div style="text-align: center;">
-
-
 
 {#    <div class="sticky-top">#}
 {#        <div class="well">#}
@@ -60,15 +45,11 @@
 
         <div style="position: relative;">
             <div class="canvas-holder" style="">
-                <canvas id="canvas1" style="border: 1px solid #ccc;">
+                <canvas id="canvas1">
                     Ваш браузер не поддерживает элемент canvas.
                 </canvas>
             </div>
         </div>
-
-
-
-
     </div>
 </div>
 <script>
@@ -84,7 +65,7 @@
         localStorage.fl = false
         }
 
-    console.log(localStorage.uid)
+    {#console.log(localStorage.uid)#}
     if (bot.initDataUnsafe.user)
         if (localStorage.uid === undefined || localStorage.uid !== bot.initDataUnsafe.user.id)
             localStorage.uid = bot.initDataUnsafe.user.id
