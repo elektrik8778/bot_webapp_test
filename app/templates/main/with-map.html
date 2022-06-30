@@ -95,8 +95,6 @@
         bot.close();
     });
 
-
-
     var backgroundLayer = new SchemeDesigner.Layer('background', {zIndex: 0, visible: false, active: false});
     var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 10});
 
@@ -118,7 +116,6 @@
                 all_objects[i].params.isSelected = !all_objects[i].params.isSelected;
                 console.log(unescape(all_objects[i].params.sectorName), all_objects[i].params.row, all_objects[i].params.seat);
             }
-
         }
     };
     /**
@@ -369,6 +366,7 @@
      * Show scheme
      */
     schemeDesigner.render();
+    schemeDesigner.scrollManager.scroll(parseInt(screen.width/2-250), 0)
 
 
 
