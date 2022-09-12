@@ -25,10 +25,6 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
         user.last_visit = datetime.now()
 
     db.session.commit()
-    # await context.bot.send_message(
-    #     chat_id=update.effective_chat.id,
-    #     text="I'm a bot, please talk to me!"
-    # )
     await update.effective_message.reply_text(text=texts.greeting(user),
                                               parse_mode=ParseMode.MARKDOWN)
 

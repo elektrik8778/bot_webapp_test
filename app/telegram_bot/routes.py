@@ -16,7 +16,7 @@ import json
 from telegram.ext import ApplicationBuilder
 
 
-def get_bot():
+def get_bot() -> ApplicationBuilder.bot:
     application = ApplicationBuilder().token(Config.TG_TOKEN).build()
     set_bot_handlers(application)
     return application.bot

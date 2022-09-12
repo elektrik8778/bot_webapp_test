@@ -1,42 +1,33 @@
-import os
-
-import config
 from app.main import bp
-from flask import redirect, request, render_template
-from flask_login import login_required
-from app import db
-from app.models import Event
-# from app.telegram_bot.handlers import get_inline_menu, create_button_map
-# from telegram.error import Unauthorized
-from telegram.constants import ParseMode
-from datetime import datetime
-
-from app.models import Placement
+from flask import render_template
+from app.models import User
 from config import Config
+from app.telegram_bot.routes import get_bot
 
 
 @bp.route('/categories')
 @bp.route('/', methods=['GET', 'POST'])
-# @login_required
 def index():
-    # print('/_route')
-    # bot_name = Config.BOT_NAME
-    # title = 'Главная'
-    # server = Config.SERVER
-    # placement: Placement = Placement.query.filter(Placement.id == 1).first()
-    # if request.args:
-    #     if 'u' in request.args:
-    #         print(request.args['u'])
-    #
-    # return render_template('main/with-map.html',
-    #                        bot_name=bot_name,
-    #                        title=title,
-    #                        server=server,
-    #                        placement=placement)
-    return redirect('/admin')
+    bot_name = Config.BOT_NAME
+    title = 'Замок'
+    return render_template('main/index.html',
+                           bot_name=bot_name,
+                           title=title)
 
 
-@bp.get('/event/<eid>/chairs')
-def web_app_event_chairs(eid):
-    max_places = Config.MAX_PLACES
-    return render_template('main/with-map.html', event=Event.query.get(int(eid)), max_places=max_places)
+@bp.route('/quest/<uid>')
+async def quest(uid):
+    user: User = User.query.filter(User.tg_id == int(uid)).first()
+    bot = get_bot()
+    await bot.send_message(chat_id=uid,
+                           text='Проходим квест')
+    return user.first_name
+
+
+@bp.route('/final_battle/<uid>')
+async def final_battle(uid):
+    user: User = User.query.filter(User.tg_id == int(uid)).first()
+    bot = get_bot()
+    await bot.send_message(chat_id=uid,
+                           text='Получаем видео финальной битвы')
+    return user.first_name
