@@ -2,7 +2,6 @@ import os
 import json
 from app import db, Config
 from app.admin import bp
-from app.models import Place, Placement, Event
 from app.admin.forms import PlaceForm, PlacementForm, EventForm
 from flask import render_template, request, redirect
 

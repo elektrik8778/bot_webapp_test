@@ -2,7 +2,6 @@ import os
 import json
 from app import db, Config
 from app.admin import bp
-from app.models import Place, Placement
 from app.admin.forms import PlaceForm, PlacementForm
 from flask import render_template, request, redirect
 from werkzeug.utils import secure_filename

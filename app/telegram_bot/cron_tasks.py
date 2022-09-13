@@ -1,6 +1,6 @@
 from app.telegram_bot import bp
 from app import Config, db
-from app.models import Event, Order, User
+from app.models import User
 from app.telegram_bot.routes import get_bot
 import os
 

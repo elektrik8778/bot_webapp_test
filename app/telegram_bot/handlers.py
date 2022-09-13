@@ -1,5 +1,5 @@
 from app import db
-from app.models import User, Event, Group, Order
+from app.models import User, Group
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice
 from app.telegram_bot.helpers import with_app_context
 from telegram.ext import CallbackContext

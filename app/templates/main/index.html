@@ -14,7 +14,10 @@
 </head>
 <body>
 <main class="container-fluid" style="min-height: 100vh; background-color: black; font-family: '8BIT WONDER'">
-    <section id="achieves" class="text-center">
+    <section id="greeting" class="text-center pt-2">
+        <span id="greeting-text" class="nes-text is-primary"></span>
+    </section>
+    <section id="achieves" class="text-center pt-2">
         <i class="nes-icon is-large star is-transparent"></i>
         <i class="nes-icon is-large star is-transparent"></i>
         <i class="nes-icon is-large star is-transparent"></i>
@@ -26,16 +29,22 @@
 {#        <i class="nes-icon trophy is-large"></i>#}
 {#        <i class="nes-icon trophy is-large"></i>#}
     </section>
-    <section id="pers" class="text-center" style="height: 40vh; display: flex">
-        <i class="nes-octocat animate" style="margin: auto"></i>
+    <section id="pers-wrapper" style="height: 40vh; display: flex">
+        <i id="pers" class="nes-octocat animate text-center" style="margin: auto"></i>
+        <div id="pers-is-absent" class="message -left" style="margin: auto">
+            <div class="nes-balloon from-left is-dark">
+              <p>вы ушли проходить квест</p>
+            </div>
+            <i class="nes-bcrikko"></i>
+        </div>
     </section>
     <section id="controls">
         <div class="row text-center">
             <div class="col-6">
-                <a id="start-quest" class="nes-btn is-success" href="#">Пройти квест</a>
+                <a id="start-quest" class="nes-btn is-success" href="#" style="text-decoration: none">Пройти квест</a>
             </div>
             <div class="col-6">
-                <a id="final-battle" class="nes-btn is-error" href="#">Финальная битва</a>
+                <a id="final-battle" class="nes-btn is-error" href="#" style="text-decoration: none">Финальная битва</a>
             </div>
         </div>
     </section>
@@ -43,23 +52,44 @@
 <script>
     const bot = Telegram.WebApp;
 
-    {#console.log(localStorage.uid)#}
     if (bot.initDataUnsafe.user)
         if (localStorage.uid === undefined || localStorage.uid !== bot.initDataUnsafe.user.id)
             localStorage.uid = bot.initDataUnsafe.user.id
 
-    var uid = localStorage.uid;
+    let uid = localStorage.uid;
+    initPers()
 
     $('#start-quest').click(startQuest)
     $('#final-battle').click(finalBattle)
 
+    async function initPers() {
+        let response =  await fetch(`/check_quest_process/${uid}`);
+        if (response.status === 200) {
+            $('#pers').hide()
+            $('#pers-is-absent').show()
+            $('#start-quest').hide()
+            $('#final-battle').hide()
+        }
+        else {
+            $('#pers').show()
+            $('#pers-is-absent').hide()
+            $('#start-quest').show()
+            $('#final-battle').show()
+        }
+
+        let currentUser =  await fetch(`/get_user/${uid}`);
+        if (currentUser.ok) {
+            currentUser.text().then(txt=>{
+                $('#greeting-text').text(`Привет, ${txt}!`)
+            })
+        }
+    }
     function startQuest() {
         fetch(`/quest/${uid}`).then(result=>{
             console.log(result.text())
         })
         bot.close()
     }
-
     function finalBattle() {
         fetch(`/final_battle/${uid}`).then(result=>{
             console.log(result.text())

@@ -10,7 +10,7 @@ from flask import request
 from pprint import pprint
 from telegram.ext import CommandHandler, MessageHandler, filters, CallbackQueryHandler, PreCheckoutQueryHandler
 from telegram import LabeledPrice, InlineKeyboardButton, InlineKeyboardMarkup
-from app.models import User, Event, Order
+from app.models import User
 from sqlalchemy.engine import CursorResult
 import json
 from telegram.ext import ApplicationBuilder

@@ -1,7 +1,6 @@
 from telegram.ext import CallbackContext
 from app.telegram_bot.helpers import with_app_context
 from app import db, Config
-from app.models import Order, UserBonus
 from telegram import Update
 from datetime import datetime
 

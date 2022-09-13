@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from app import db
 # from app import bot
 from app.admin import bp
-from app.models import User, Group, Tag, UserTag, ScheduledMessage, Placement
+from app.models import User, Group, Tag, UserTag, ScheduledMessage
 from app.admin.forms import ChangeWebhookForm, ScheduledMessageCreateForm, SendTGMessageForm, SendGroupTGMessageForm,\
     CreateGroupForm, CreateModerForm, CreateQuestionForm, EditQuizForm, PrizeForm
 from config import Config
