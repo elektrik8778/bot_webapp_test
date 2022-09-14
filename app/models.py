@@ -48,6 +48,7 @@ class User(UserMixin, db.Model):
     registered = db.Column(db.DateTime)
     last_visit = db.Column(db.DateTime)
     unsubscribed = db.Column(db.Boolean, default=False)
+    source = db.Column(db.Text)
     # promo_codes = db.Column(db.JSON)
 
     def set_unsubscribed(self):

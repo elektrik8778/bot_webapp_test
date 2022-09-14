@@ -21,6 +21,7 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
         user.last_visit = datetime.now()
         user.role = 'admin' if len(User.query.all()) == 0 else 'user'
         user.set_password('pwd')
+        user.source = update.effective_message.text.split('/start')[-1].strip()
         db.session.add(user)
     else:
         user.last_visit = datetime.now()
