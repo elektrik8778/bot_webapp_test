@@ -11,8 +11,8 @@ import json
 import os
 
 
-@bp.route('/categories')
-@bp.route('/', methods=['GET', 'POST'])
+@bp.route('/castle')
+# @bp.route('/', methods=['GET', 'POST'])
 def index():
     # print(request.__dict__)
     bot_name = Config.BOT_NAME
