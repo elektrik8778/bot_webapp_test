@@ -7,6 +7,8 @@ from app.telegram_bot.routes import get_bot
 from app.telegram_bot.texts import quest_start
 from telegram.constants import ParseMode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+import json
+import os
 
 
 @bp.route('/categories')
@@ -24,6 +26,21 @@ def index():
 def get_user(uid):
     user: User = User.query.filter(User.tg_id == int(uid)).first()
     return make_response(user.first_name, 200)
+
+
+@bp.route('/get_components/<uid>')
+def get_components(uid):
+    user: User = User.query.filter(User.tg_id == int(uid)).first()
+    components = user.get_components()
+    result = []
+    for uc in components:
+        c = uc.get_component()
+        result.append({
+            'id': uc.component,
+            'name': c.name,
+            'description': c.description
+        })
+    return json.dumps(result)
 
 
 @bp.route('/check_quest_process/<uid>')
@@ -61,6 +78,42 @@ async def quest(uid):
 async def final_battle(uid):
     user: User = User.query.filter(User.tg_id == int(uid)).first()
     bot = get_bot()
-    await bot.send_message(chat_id=uid,
-                           text='Получаем видео финальной битвы')
+
+    # получить компоненты пользователя
+    components = user.get_components()
+    components_count = len(components)
+
+    # если их 5, то победа
+    # если их 0, то поражение с первого раза
+    # если их N, то поражение со второго раза
+    # если их 2, то поражение с третьего раза
+    # если их 3, то поражение с четвертого раза
+    # если их 4, то поражение с пятого раза
+    if components_count == 5:
+        if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.fid')):
+            vfile = os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.fid')
+        else:
+            vfile = os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.mp4')
+    else:
+        if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count+1}.fid')):
+            vfile = os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count+1}.fid')
+        else:
+            vfile = os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count + 1}.mp4')
+
+    if vfile.split('.')[-1] == 'mp4':
+        with open(vfile, 'rb') as video:
+            result = await bot.send_video(chat_id=uid,
+                                          video=video,
+                                          caption='Ваша финальная битва')
+            with open(os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count+1}.fid'), 'w') as fid:
+                fid.write(result.video.file_id)
+    else:
+        with open(vfile, 'r') as video:
+            result = await bot.send_video(chat_id=uid,
+                                          video=video.read(),
+                                          caption='Ваша финальная битва')
+
+    for c in components:
+        db.session.delete(c)
+    db.session.commit()
     return user.first_name

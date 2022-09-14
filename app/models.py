@@ -5,7 +5,7 @@ from datetime import datetime
 import jwt
 from time import time
 from telegram import Update, WebAppInfo, InlineKeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, \
-    ReplyKeyboardRemove, KeyboardButton, InputMediaVideo, InputMediaPhoto, LabeledPrice
+    ReplyKeyboardRemove, KeyboardButton, InputMediaVideo, InputMediaPhoto, LabeledPrice, Message
 from telegram.constants import ParseMode
 # from googleapiclient.discovery import build
 # from google.oauth2 import service_account
@@ -117,8 +117,6 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return f'{self.first_name}'
 
-
-
     def write_to_google_sheet(self):
         SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
         SERVICE_ACCOUNT_FILE = os.path.join(Config.STATIC_FOLDER, 'json', 'credentials.json')
@@ -141,6 +139,12 @@ class User(UserMixin, db.Model):
             valueInputOption='USER_ENTERED',
             insertDataOption='INSERT_ROWS',
             body=new_values).execute()
+
+    def get_quest_process(self):
+        return QuestProcess.query.filter(QuestProcess.user == self.id).first()
+
+    def get_components(self):
+        return UserComponent.query.filter(UserComponent.user == self.id).all()
 
 
 class Group(db.Model):
@@ -219,3 +223,70 @@ class QuestProcess(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     started = db.Column(db.DateTime)
+    status = db.Column(db.Text)
+
+
+class Quiz(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    description = db.Column(db.Text)
+    way = db.Column(db.Integer)
+
+    def get_questions(self):
+        return QuizQuestion.query.filter(QuizQuestion.quiz == self.id).order_by(QuizQuestion.order).all()
+
+    def get_next_question(self, user: User):
+        qp: QuestProcess = user.get_quest_process()
+        next_question_number = int(qp.status.split('_')[-1])
+        questions = self.get_questions()
+        next_question: QuizQuestion = questions[next_question_number]
+        text = f'*Вопрос {next_question_number+1}*\n\n{next_question.question}'
+        btns = []
+
+        for index, qqv in enumerate(next_question.get_variants()):
+            text += f'\n{index+1}) {qqv.variant}'
+            btns.append([InlineKeyboardButton(text=str(index+1), callback_data=f'answer_{qqv.id}')])
+        result = {
+            'text': text,
+            'reply_markup': InlineKeyboardMarkup(inline_keyboard=btns)
+        }
+        return result
+
+
+class QuizQuestion(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    quiz = db.Column(db.Integer, db.ForeignKey('quiz.id', ondelete='SET NULL'))
+    question = db.Column(db.Text)
+    order = db.Column(db.Integer)
+
+    def get_variants(self):
+        return QuizQuestionVariant.query.filter(QuizQuestionVariant.question == self.id).order_by(QuizQuestionVariant.id).all()
+
+    def get_quiz(self) -> Quiz:
+        return Quiz.query.get(self.quiz)
+
+class QuizQuestionVariant(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    question = db.Column(db.Integer, db.ForeignKey('quiz_question.id', ondelete='CASCADE'))
+    variant = db.Column(db.Text)
+    components = db.Column(db.ARRAY(db.Integer))
+
+    def get_question(self) -> QuizQuestion:
+        return QuizQuestion.query.get(self.question)
+
+
+class Component(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+
+
+class UserComponent(db.Model):
+    def __init__(self):
+        self.got = datetime.now()
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+    component = db.Column(db.Integer, db.ForeignKey('component.id', ondelete='CASCADE'))
+    got = db.Column(db.DateTime)
+
+    def get_component(self) -> Component:
+        return Component.query.get(self.component)

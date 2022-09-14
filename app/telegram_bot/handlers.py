@@ -1,5 +1,5 @@
 from app import db
-from app.models import User, Group
+from app.models import User, Group, Quiz, QuestProcess, QuizQuestion, QuizQuestionVariant, Component, UserComponent
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice
 from app.telegram_bot.helpers import with_app_context
 from telegram.ext import CallbackContext
@@ -10,6 +10,7 @@ from app.telegram_bot import texts
 
 @with_app_context
 async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    await update.effective_message.delete()
     user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
     if not user:
         user = User()
@@ -27,13 +28,82 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
     db.session.commit()
     await update.effective_message.reply_text(text=texts.greeting(user),
                                               parse_mode=ParseMode.MARKDOWN)
+    return
 
 
 @with_app_context
-async def echo(update: Update, context: CallbackContext.DEFAULT_TYPE):
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=update.message.text)
+async def quest_way(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
+    way = update.callback_query.data.split('_')[-1]
+    text = texts.quest_start(user, way)
+    await update.effective_message.edit_text(text=text, reply_markup=None, parse_mode=ParseMode.MARKDOWN)
+    # высылаем викторину, если она есть
+    quiz: Quiz = Quiz.query.filter(Quiz.way == int(way)).first()
+    if quiz:
+        quest_process: QuestProcess = QuestProcess.query.filter(QuestProcess.user == user.id).first()
+        quest_process.status = f'quiz_{quiz.id}_question_0'
+        db.session.commit()
+        await update.effective_message.reply_text(quiz.description, parse_mode=ParseMode.MARKDOWN)
+        question = quiz.get_next_question(user)
+        await update.effective_message.reply_text(text=question['text'], reply_markup=question['reply_markup'], parse_mode=ParseMode.MARKDOWN)
+    else:
+        quest_process = QuestProcess.query.filter(QuestProcess.user == user.id).all()
+        for qp in quest_process:
+            db.session.delete(qp)
+        db.session.commit()
+        await update.effective_message.reply_text('В таком случае, возвращайтесь на базу и попробуйте пройти финальную битву.')
+    return
+
+
+@with_app_context
+async def quiz_answer(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
+    variant: QuizQuestionVariant = QuizQuestionVariant.query.get(update.callback_query.data.split('_')[-1])
+    quiz = variant.get_question().get_quiz()
+    qp: QuestProcess = user.get_quest_process()
+    await update.effective_message.edit_reply_markup(reply_markup=None)
+
+    async def next_step(last=False):
+        if variant.components:
+            components = Component.query.filter(Component.id.in_(variant.components)).all()
+            btns = []
+            for c in components:
+                btns.append([InlineKeyboardButton(text=c.name, callback_data=f'component_{c.id}')])
+            await update.effective_message.reply_text(text='Это верный ответ, выбирайте компонент защиты',
+                                                      reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
+                                                      parse_mode=ParseMode.MARKDOWN)
+        if not last:
+            question = quiz.get_next_question(user)
+            await update.effective_message.reply_text(text=question['text'], reply_markup=question['reply_markup'],
+                                                      parse_mode=ParseMode.MARKDOWN)
+
+    current_question_number = int(qp.status.split('_')[-1])
+    questions_count = len(quiz.get_questions())
+    if current_question_number+1 < questions_count:
+        qp.status = f'quiz_{quiz.id}_question_{current_question_number+1}'
+        await next_step()
+    else:
+        await next_step(last=True)
+        db.session.delete(qp)
+        db.session.commit()
+        await update.effective_message.reply_text('Ок, возвращайтесь на базу и попробуйте пройти финальную битву.')
+    db.session.commit()
+
+    return
+
+
+async def collect_component(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    await update.effective_message.edit_reply_markup(reply_markup=None)
+    user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
+    component: Component = Component.query.get(int(update.callback_query.data.split('_')[-1]))
+    user_component = UserComponent()
+    user_component.user = user.id
+    user_component.component = component.id
+    db.session.add(user_component)
+    db.session.commit()
+    await update.effective_message.edit_text(text=f'*Вы получили {component.name}*\n\n{component.description if component.description else ""}',
+                                             parse_mode=ParseMode.MARKDOWN)
+    return
 
 
 @with_app_context
@@ -55,51 +125,8 @@ async def help_command(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
 
 @with_app_context
-async def events(update: Update, context: CallbackContext.DEFAULT_TYPE):
-    from app.telegram_bot import buttons as btns
-    chat_id = int(update.message.from_user.id)
-    message_id = int(update.message.message_id)
-    sender: User = User.query.filter(User.tg_id == chat_id).first()
-
-    await update.message.delete()
-
-    events: Event = Event.query.order_by(Event.date, Event.time).all()
-    buttons = []
-    for index, i in enumerate(events):
-        text = f'{i.name} ({i.date.strftime("%d.%m.%y")}, {i.time.strftime("%H:%M")})'
-        callback = f'event_{i.id}'
-        buttons.append(
-            InlineKeyboardButton(text=text,
-                                 callback_data=callback)
-        )
-
-    buttons.append(btns.hide_btn())
-
-    await update.message.reply_text(
-        text='Список предстоящих концертов:',
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[x] for x in buttons]))
-
-
-@with_app_context
-async def send_event(update: Update, context: CallbackContext.DEFAULT_TYPE):
-    await Event.query.get(int(update.callback_query.data.split('_')[-1])).send_info(update, context)
-    return 'ok'
-
-
-@with_app_context
 async def hide_msg(update: Update, context: CallbackContext.DEFAULT_TYPE):
     await update.effective_message.delete()
-    return 'ok'
-
-
-@with_app_context
-async def cancel_order(update: Update, context: CallbackContext.DEFAULT_TYPE):
-    if order := Order.query.get(int(update.callback_query.data.split('_')[-1])):
-        if not order.paid:
-            order.cancel()
-            await update.effective_message.delete()
-        else:
-            await update.effective_message.reply_text('Нельзя отменить оплаченный заказ.')
     return 'ok'
 
 
@@ -113,21 +140,3 @@ async def help(update: Update, context: CallbackContext.DEFAULT_TYPE):
 @with_app_context
 async def delete_message(update: Update, context: CallbackContext.DEFAULT_TYPE):
     await update.callback_query.delete_message()
-
-@with_app_context
-async def send_pay(update: Update, context: CallbackContext.DEFAULT_TYPE):
-    user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
-    prices = [LabeledPrice(label='Концерт', amount=int(5 * 10000))]
-    need_phone_number = False
-    if not user.phone:
-        need_phone_number = True
-    await update.effective_message.reply_invoice(title='name',
-                                           description='описание',
-                                           payload=str(2),
-                                           provider_token=('284685063:TEST:MTlkMTA0NDBkM2U0'),
-                                           currency='RUB',
-                                           prices=prices,
-                                           protect_content=True,
-                                           need_phone_number=need_phone_number,
-                                           max_tip_amount=40000,
-                                           suggested_tip_amounts=[19900, 29900, 39900])

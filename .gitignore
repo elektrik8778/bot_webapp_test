@@ -10,3 +10,4 @@ migrations/
 venv/
 app/static/uploads/placements/
 app/static/uploads/
+app/static/video/

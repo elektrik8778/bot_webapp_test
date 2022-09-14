@@ -17,19 +17,19 @@
     <section id="greeting" class="text-center pt-2">
         <span id="greeting-text" class="nes-text is-primary"></span>
     </section>
-    <section id="achieves" class="text-center pt-2">
-        <i class="nes-icon is-large star is-transparent"></i>
-        <i class="nes-icon is-large star is-transparent"></i>
-        <i class="nes-icon is-large star is-transparent"></i>
-        <i class="nes-icon is-large star is-transparent"></i>
-        <i class="nes-icon is-large star is-transparent"></i>
+    <section id="achieves" class="text-center pt-2" hidden>
+{#        <i class="nes-icon is-large star is-transparent"></i>#}
+{#        <i class="nes-icon is-large star is-transparent"></i>#}
+{#        <i class="nes-icon is-large star is-transparent"></i>#}
+{#        <i class="nes-icon is-large star is-transparent"></i>#}
+{#        <i class="nes-icon is-large star is-transparent"></i>#}
 {#        <i class="nes-icon trophy is-large"></i>#}
 {#        <i class="nes-icon trophy is-large"></i>#}
 {#        <i class="nes-icon trophy is-large"></i>#}
 {#        <i class="nes-icon trophy is-large"></i>#}
 {#        <i class="nes-icon trophy is-large"></i>#}
     </section>
-    <section id="pers-wrapper" style="height: 40vh; display: flex">
+    <section id="pers-wrapper" style="height: 30vh; display: flex">
         <i id="pers" class="nes-octocat animate text-center" style="margin: auto"></i>
         <div id="pers-is-absent" class="message -left" style="margin: auto">
             <div class="nes-balloon from-left is-dark">
@@ -83,6 +83,22 @@
                 $('#greeting-text').text(`Привет, ${txt}!`)
             })
         }
+
+        let components = await fetch(`/get_components/${uid}`)
+        components.json().then(result=>{
+            let achieves = $('#achieves')
+            if (result) achieves.empty()
+            for (let c of result) {
+                console.log(c)
+                achieves.append(`
+    <div style="max-width: 18%; display: inline-grid">
+        <p class="mb-0" "><i class="nes-icon is-large trophy"></i></p>
+        <p class="mt-0" style="font-size: 6px; color: white;">${c.name}</p>
+    </div>
+`)
+            }
+            achieves.removeAttr('hidden')
+        })
     }
     function startQuest() {
         fetch(`/quest/${uid}`).then(result=>{
