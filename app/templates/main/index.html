@@ -30,8 +30,8 @@
 {#        <i class="nes-icon trophy is-large"></i>#}
     </section>
     <section id="pers-wrapper" style="height: 30vh; display: flex">
-        <i id="pers" class="nes-octocat animate text-center" style="margin: auto"></i>
-        <div id="pers-is-absent" class="message -left" style="margin: auto">
+        <i id="pers" class="nes-octocat animate text-center" style="margin: auto" hidden></i>
+        <div id="pers-is-absent" class="message -left" style="margin: auto" hidden>
             <div class="nes-balloon from-left is-dark">
               <p>вы ушли проходить квест</p>
             </div>
@@ -65,14 +65,12 @@
     async function initPers() {
         let response =  await fetch(`/check_quest_process/${uid}`);
         if (response.status === 200) {
-            $('#pers').hide()
-            $('#pers-is-absent').show()
+            $('#pers-is-absent').removeAttr('hidden')
             $('#start-quest').hide()
             $('#final-battle').hide()
         }
         else {
-            $('#pers').show()
-            $('#pers-is-absent').hide()
+            $('#pers').removeAttr('hidden')
             $('#start-quest').show()
             $('#final-battle').show()
         }
