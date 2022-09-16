@@ -17,10 +17,13 @@ from string import ascii_letters
 async def test1():
     user: User = User.query.get(1)
     bot = get_bot()
-    result = await bot.send_message(chat_id=user.tg_id,
-                                    text=random.choices(population=ascii_letters, k=10))
-    await result.edit_text(text=random.choices(population=ascii_letters, k=10))
-    await result.delete()
+    try:
+        result = await bot.send_message(chat_id=user.tg_id,
+                                        text=random.choices(population=ascii_letters, k=10))
+        await result.edit_text(text=random.choices(population=ascii_letters, k=10))
+        await result.delete()
+    except Exception as e:
+        print(e)
     return 'ok'
 
 
