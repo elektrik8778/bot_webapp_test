@@ -87,6 +87,11 @@ async def quest(uid):
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=[btns])
 
+    components = user.get_components()
+    for c in components:
+        db.session.delete(c)
+    db.session.commit()
+
     await bot.send_message(chat_id=uid,
                            text=quest_start(user),
                            reply_markup=keyboard,
