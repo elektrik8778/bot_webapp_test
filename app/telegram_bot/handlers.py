@@ -29,6 +29,7 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
     db.session.commit()
     await update.effective_message.reply_text(text=texts.greeting(user),
                                               parse_mode=ParseMode.MARKDOWN)
+    db.session.remove()
     return
 
 
@@ -46,13 +47,15 @@ async def quest_way(update: Update, context: CallbackContext.DEFAULT_TYPE):
         db.session.commit()
         await update.effective_message.reply_text(quiz.description, parse_mode=ParseMode.MARKDOWN)
         question = quiz.get_next_question(user)
-        await update.effective_message.reply_text(text=question['text'], reply_markup=question['reply_markup'], parse_mode=ParseMode.MARKDOWN)
+        if question:
+            await update.effective_message.reply_text(text=question['text'], reply_markup=question['reply_markup'], parse_mode=ParseMode.MARKDOWN)
     else:
         quest_process = QuestProcess.query.filter(QuestProcess.user == user.id).all()
         for qp in quest_process:
             db.session.delete(qp)
         db.session.commit()
         await update.effective_message.reply_text('В таком случае, возвращайтесь на базу и попробуйте пройти финальную битву.')
+    db.session.remove()
     return
 
 
@@ -63,33 +66,30 @@ async def quiz_answer(update: Update, context: CallbackContext.DEFAULT_TYPE):
     quiz = variant.get_question().get_quiz()
     qp: QuestProcess = user.get_quest_process()
     await update.effective_message.edit_reply_markup(reply_markup=None)
+    current_question_number = int(qp.status.split('_')[-1])
+    qp.status = f'quiz_{quiz.id}_question_{current_question_number + 1}'
 
-    async def next_step(last=False):
-        if variant.components:
-            components = Component.query.filter(Component.id.in_(variant.components)).all()
-            btns = []
-            for c in components:
-                btns.append([InlineKeyboardButton(text=c.name, callback_data=f'component_{c.id}')])
-            await update.effective_message.reply_text(text='Это верный ответ, выбирайте компонент защиты',
-                                                      reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
-                                                      parse_mode=ParseMode.MARKDOWN)
-        if not last:
-            question = quiz.get_next_question(user)
+    if variant.components:
+        # высылаем компоненты на выбор
+        components = Component.query.filter(Component.id.in_(variant.components)).all()
+        btns = []
+        for c in components:
+            btns.append([InlineKeyboardButton(text=c.name, callback_data=f'component_{c.id}')])
+        await update.effective_message.reply_text(text='Это верный ответ, выбирайте компонент защиты',
+                                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
+                                                  parse_mode=ParseMode.MARKDOWN)
+    else:
+        # высылаем следующий вопрос
+        question = quiz.get_next_question(user)
+        if question:
             await update.effective_message.reply_text(text=question['text'], reply_markup=question['reply_markup'],
                                                       parse_mode=ParseMode.MARKDOWN)
+        else:
+            db.session.delete(qp)
+            await update.effective_message.reply_text('Ок, возвращайтесь на базу и попробуйте пройти финальную битву.')
 
-    current_question_number = int(qp.status.split('_')[-1])
-    questions_count = len(quiz.get_questions())
-    if current_question_number+1 < questions_count:
-        qp.status = f'quiz_{quiz.id}_question_{current_question_number+1}'
-        await next_step()
-    else:
-        await next_step(last=True)
-        db.session.delete(qp)
-        db.session.commit()
-        await update.effective_message.reply_text('Ок, возвращайтесь на базу и попробуйте пройти финальную битву.')
     db.session.commit()
-
+    db.session.remove()
     return
 
 
@@ -104,6 +104,24 @@ async def collect_component(update: Update, context: CallbackContext.DEFAULT_TYP
     db.session.commit()
     await update.effective_message.edit_text(text=f'*Вы получили {component.name}*\n\n{component.description if component.description else ""}',
                                              parse_mode=ParseMode.MARKDOWN)
+
+    # следующий вопрос, если он есть
+    qp: QuestProcess = user.get_quest_process()
+    quiz: Quiz = Quiz.query.get(qp.status.split('_')[1])
+    current_question_number = int(qp.status.split('_')[-1])
+    questions_count = len(quiz.get_questions())
+
+    question = quiz.get_next_question(user)
+    if question:
+        await update.effective_message.reply_text(text=question['text'],
+                                                  reply_markup=question['reply_markup'],
+                                                  parse_mode=ParseMode.MARKDOWN)
+    else:
+        db.session.delete(qp)
+        await update.effective_message.reply_text('Ок, возвращайтесь на базу и попробуйте пройти финальную битву.')
+
+    db.session.commit()
+    db.session.remove()
     return
 
 

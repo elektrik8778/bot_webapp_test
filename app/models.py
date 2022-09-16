@@ -239,18 +239,22 @@ class Quiz(db.Model):
         qp: QuestProcess = user.get_quest_process()
         next_question_number = int(qp.status.split('_')[-1])
         questions = self.get_questions()
-        next_question: QuizQuestion = questions[next_question_number]
-        text = f'*Вопрос {next_question_number+1}*\n\n{next_question.question}'
-        btns = []
 
-        for index, qqv in enumerate(next_question.get_variants()):
-            text += f'\n{index+1}) {qqv.variant}'
-            btns.append([InlineKeyboardButton(text=str(index+1), callback_data=f'answer_{qqv.id}')])
-        result = {
-            'text': text,
-            'reply_markup': InlineKeyboardMarkup(inline_keyboard=btns)
-        }
-        return result
+        try:
+            next_question: QuizQuestion = questions[next_question_number]
+            text = f'*Вопрос {next_question_number+1}*\n\n{next_question.question}'
+            btns = []
+
+            for index, qqv in enumerate(next_question.get_variants()):
+                text += f'\n{index+1}) {qqv.variant}'
+                btns.append([InlineKeyboardButton(text=str(index+1), callback_data=f'answer_{qqv.id}')])
+            result = {
+                'text': text,
+                'reply_markup': InlineKeyboardMarkup(inline_keyboard=btns)
+            }
+            return result
+        except Exception as e:
+            return None
 
 
 class QuizQuestion(db.Model):
