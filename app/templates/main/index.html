@@ -17,18 +17,7 @@
     <section id="greeting" class="text-center pt-2">
         <span id="greeting-text" class="nes-text is-primary"></span>
     </section>
-    <section id="achieves" class="text-center pt-2" hidden>
-{#        <i class="nes-icon is-large star is-transparent"></i>#}
-{#        <i class="nes-icon is-large star is-transparent"></i>#}
-{#        <i class="nes-icon is-large star is-transparent"></i>#}
-{#        <i class="nes-icon is-large star is-transparent"></i>#}
-{#        <i class="nes-icon is-large star is-transparent"></i>#}
-{#        <i class="nes-icon trophy is-large"></i>#}
-{#        <i class="nes-icon trophy is-large"></i>#}
-{#        <i class="nes-icon trophy is-large"></i>#}
-{#        <i class="nes-icon trophy is-large"></i>#}
-{#        <i class="nes-icon trophy is-large"></i>#}
-    </section>
+    <section id="achieves" class="text-center pt-2" hidden></section>
     <section id="pers-wrapper" style="height: 30vh; display: flex">
         <i id="pers" class="nes-octocat animate text-center" style="margin: auto" hidden></i>
         <div id="pers-is-absent" class="message -left" style="margin: auto" hidden>
@@ -59,8 +48,6 @@
     let uid = localStorage.uid;
     initPers()
 
-    {#$('#start-quest').click(startQuest)#}
-    {#$('#final-battle').click(finalBattle)#}
     let startQuestBtn = document.querySelector('#start-quest')
     let finalBattleBtn = document.querySelector('#final-battle')
     startQuestBtn.addEventListener('click', startQuest)
@@ -69,17 +56,11 @@
     async function initPers() {
         let response =  await fetch(`/check_quest_process/${uid}`);
         if (response.status === 200) {
-            {#$('#pers-is-absent').removeAttr('hidden')#}
-            {#$('#start-quest').hide()#}
-            {#$('#final-battle').hide()#}
             document.querySelector('#pers-is-absent').removeAttribute('hidden')
             startQuestBtn.style.display = 'none';
             finalBattleBtn.style.display = 'none';
         }
         else {
-            {#$('#pers').removeAttr('hidden')#}
-            {#$('#start-quest').show()#}
-            {#$('#final-battle').show()#}
             document.querySelector('#pers').removeAttribute('hidden')
             startQuestBtn.style.display = 'inline-block';
             finalBattleBtn.style.display = 'inline-block';
@@ -88,7 +69,6 @@
         let currentUser =  await fetch(`/get_user/${uid}`);
         if (currentUser.ok) {
             currentUser.text().then(txt=>{
-                {#$('#greeting-text').text(`Привет, ${txt}!`)#}
                 document.querySelector('#greeting-text').textContent = `Привет, ${txt}!`
             })
         }
@@ -99,13 +79,6 @@
             let achieves = document.querySelector('#achieves')
             if (result) achieves.innerHTML = ''
             for (let c of result) {
-{#                console.log(c)#}
-{#                achieves.append(`#}
-{#    <div style="max-width: 18%; display: inline-grid">#}
-{#        <p class="mb-0" "><i class="nes-icon is-large trophy"></i></p>#}
-{#        <p class="mt-0" style="font-size: 6px; color: white;">${c.name}</p>#}
-{#    </div>#}
-{#`)#}
                 let achieve_wrapper = document.createElement('div')
                 achieve_wrapper.style.maxWidth = '18%';
                 achieve_wrapper.style.marginRight = '3px';
@@ -139,7 +112,6 @@
         bot.close()
         bot.close()
     }
-
 </script>
 </body>
 </html>

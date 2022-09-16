@@ -231,6 +231,8 @@ class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     description = db.Column(db.Text)
     way = db.Column(db.Integer)
+    pic = db.Column(db.Text)
+    pic_link = db.Column(db.Text)
 
     def get_questions(self):
         return QuizQuestion.query.filter(QuizQuestion.quiz == self.id).order_by(QuizQuestion.order).all()

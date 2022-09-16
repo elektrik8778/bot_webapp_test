@@ -45,7 +45,8 @@ async def quest_way(update: Update, context: CallbackContext.DEFAULT_TYPE):
         quest_process: QuestProcess = QuestProcess.query.filter(QuestProcess.user == user.id).first()
         quest_process.status = f'quiz_{quiz.id}_question_0'
         db.session.commit()
-        await update.effective_message.reply_text(quiz.description, parse_mode=ParseMode.MARKDOWN)
+        pic = f'[.]({quiz.pic_link})' if quiz.pic_link else ''
+        await update.effective_message.reply_text(f'{quiz.description} {pic}', parse_mode=ParseMode.MARKDOWN)
         question = quiz.get_next_question(user)
         if question:
             await update.effective_message.reply_text(text=question['text'], reply_markup=question['reply_markup'], parse_mode=ParseMode.MARKDOWN)
