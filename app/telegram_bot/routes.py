@@ -13,13 +13,15 @@ from telegram import LabeledPrice, InlineKeyboardButton, InlineKeyboardMarkup
 from app.models import User
 from sqlalchemy.engine import CursorResult
 import json
-from telegram.ext import ApplicationBuilder
+from telegram.ext import ApplicationBuilder, ExtBot
 
 
 def get_bot() -> ApplicationBuilder.bot:
-    application = ApplicationBuilder().token(Config.TG_TOKEN).build()
-    set_bot_handlers(application)
-    return application.bot
+    # application = ApplicationBuilder().token(Config.TG_TOKEN).build()
+    # set_bot_handlers(application)
+    # return application.bot
+    bot = ExtBot(token=Config.TG_TOKEN)
+    return bot
 
 
 def set_bot_handlers(application):
@@ -57,6 +59,7 @@ async def telegram():
     update = Update.de_json(request.get_json(force=True), bot=application.bot)
     async with application:
         await application.process_update(update)
+    db.session.remove()
     return 'ok'
 
 

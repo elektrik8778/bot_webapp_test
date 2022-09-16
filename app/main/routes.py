@@ -133,10 +133,7 @@ async def final_battle(uid):
             result = await bot.send_video(chat_id=uid,
                                           video=video.read(),
                                           caption='Ваша финальная битва')
-
     for c in components:
         db.session.delete(c)
     db.session.commit()
-
-    db.session.remove()
-    return user.first_name
+    return 'ok'
