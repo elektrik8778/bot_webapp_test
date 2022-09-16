@@ -16,6 +16,7 @@ from string import ascii_letters
 @bp.route('/test1')
 async def test1():
     user: User = User.query.get(1)
+    db.session.remove()
     bot = get_bot()
     try:
         result = await bot.send_message(chat_id=user.tg_id,
@@ -41,6 +42,7 @@ def index():
 @bp.route('/get_user/<uid>')
 def get_user(uid):
     user: User = User.query.filter(User.tg_id == int(uid)).first()
+    db.session.remove()
     return make_response(user.first_name, 200)
 
 
@@ -56,6 +58,7 @@ def get_components(uid):
             'name': c.name,
             'description': c.description
         })
+    db.session.remove()
     return json.dumps(result)
 
 
@@ -63,6 +66,7 @@ def get_components(uid):
 def check_quest_process(uid):
     user: User = User.query.filter(User.tg_id == int(uid)).first()
     quest_process: QuestProcess = QuestProcess.query.filter(QuestProcess.user == user.id).first()
+    db.session.remove()
     if quest_process:
         return make_response(str(quest_process.id), 200)
     return make_response('нет процесса', 201)
@@ -87,6 +91,7 @@ async def quest(uid):
                            text=quest_start(user),
                            reply_markup=keyboard,
                            parse_mode=ParseMode.MARKDOWN)
+    db.session.remove()
     return user.first_name
 
 
@@ -132,4 +137,6 @@ async def final_battle(uid):
     for c in components:
         db.session.delete(c)
     db.session.commit()
+
+    db.session.remove()
     return user.first_name
