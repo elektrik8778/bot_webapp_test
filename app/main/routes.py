@@ -9,6 +9,19 @@ from telegram.constants import ParseMode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import json
 import os
+import random
+from string import ascii_letters
+
+
+@bp.route('/test1')
+async def test1():
+    user: User = User.query.get(1)
+    bot = get_bot()
+    result = await bot.send_message(chat_id=user.tg_id,
+                                    text=random.choices(population=ascii_letters, k=10))
+    await result.edit_text(text=random.choices(population=ascii_letters, k=10))
+    await result.delete()
+    return 'ok'
 
 
 @bp.route('/castle')
