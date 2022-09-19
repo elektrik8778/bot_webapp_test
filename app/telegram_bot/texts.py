@@ -13,7 +13,8 @@ def quest_start(user:User, var=0):
     text = f'''
 *{user.first_name}, вы отправились на поиски компонентов для защиты замка!*
 
-_Добежали до развилки..._
+{user.get_components_stat()}
+_Вы добежали до развилки_
     '''
 
     vars = [

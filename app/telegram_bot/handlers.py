@@ -6,6 +6,7 @@ from telegram.ext import CallbackContext
 from telegram.constants import ParseMode
 from datetime import datetime
 from app.telegram_bot import texts
+import json
 
 
 @with_app_context
@@ -72,11 +73,21 @@ async def quiz_answer(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
     if variant.components:
         # высылаем компоненты на выбор
-        components = Component.query.filter(Component.id.in_(variant.components)).all()
+        # components = Component.query.filter(Component.id.in_(variant.components)).all()
+        # btns = []
+        # for c in components:
+        #     btns.append([InlineKeyboardButton(text=c.name, callback_data=f'component_{c.id}')])
+        # await update.effective_message.reply_text(text='Это верный ответ, выбирайте компонент защиты',
+        #                                           reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
+        #                                           parse_mode=ParseMode.MARKDOWN)
         btns = []
-        for c in components:
-            btns.append([InlineKeyboardButton(text=c.name, callback_data=f'component_{c.id}')])
-        await update.effective_message.reply_text(text='Это верный ответ, выбирайте компонент защиты',
+        text = '*Это верный ответ. Какую награду вы хотите за него?*'
+        for index, components_set in enumerate(variant.components):
+            components = Component.query.filter(Component.id.in_(components_set)).all()
+            text += f'\n\n{index+1})'
+            text += ', '.join([c.name for c in components])
+            btns.append([InlineKeyboardButton(text=str(index+1), callback_data=f'component_{components_set}')])
+        await update.effective_message.reply_text(text=text,
                                                   reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
                                                   parse_mode=ParseMode.MARKDOWN)
     else:
@@ -95,22 +106,24 @@ async def quiz_answer(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
 
 async def collect_component(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    components = Component.query.filter(Component.id.in_(json.loads(update.callback_query.data.split('_')[-1]))).all()
     await update.effective_message.edit_reply_markup(reply_markup=None)
     user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
-    component: Component = Component.query.get(int(update.callback_query.data.split('_')[-1]))
-    user_component = UserComponent()
-    user_component.user = user.id
-    user_component.component = component.id
-    db.session.add(user_component)
+    text = '*ПОЛУЧЕН КОМПОНЕНТ*\n'
+    for c in components:
+        user_component = UserComponent()
+        user_component.user = user.id
+        user_component.component = c.id
+        db.session.add(user_component)
+        text += f'\n🎁{c.name}{" - " + c.description if c.description else ""}🎁'
     db.session.commit()
-    await update.effective_message.edit_text(text=f'*Вы получили {component.name}*\n\n{component.description if component.description else ""}',
+    stat = user.get_components_stat()
+    await update.effective_message.edit_text(text=f'{text}\n\n{stat}',
                                              parse_mode=ParseMode.MARKDOWN)
 
     # следующий вопрос, если он есть
     qp: QuestProcess = user.get_quest_process()
     quiz: Quiz = Quiz.query.get(qp.status.split('_')[1])
-    current_question_number = int(qp.status.split('_')[-1])
-    questions_count = len(quiz.get_questions())
 
     question = quiz.get_next_question(user)
     if question:

@@ -9,6 +9,7 @@
     <link href="../../static/css/nes.min.css" rel="stylesheet"/>
     <link href="../../static/css/bootstrap.min.css" rel="stylesheet">
     <script src="../../static/js/bootstrap.bundle.min"></script>
+    <script src="../../static/js/chart.min"></script>
     <link rel="stylesheet" href="../../static/css/fonts.css"></link>
     <title>{{ title }}</title>
 </head>
@@ -75,7 +76,6 @@
 
         let components = await fetch(`/get_components/${uid}`)
         components.json().then(result=>{
-            {#let achieves = $('#achieves')#}
             let achieves = document.querySelector('#achieves')
             if (result) achieves.innerHTML = ''
             for (let c of result) {

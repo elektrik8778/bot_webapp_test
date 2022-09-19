@@ -11,6 +11,7 @@ from telegram.constants import ParseMode
 # from google.oauth2 import service_account
 import os
 import json
+from sqlalchemy.engine.cursor import CursorResult
 
 
 @login.user_loader
@@ -147,6 +148,35 @@ class User(UserMixin, db.Model):
     def get_components(self):
         return UserComponent.query.filter(UserComponent.user == self.id).all()
 
+    def get_components_stat(self):
+        query = f'''
+select stat.id, stat.name, stat.description, sum(stat.collected) collected, stat.parts
+from (select c.id, c.name, c.description, c.parts, 0 as collected
+      from component c
+
+      union all
+
+      select *
+      from (select c.id, c.name, c.description, c.parts, count(uc) as collected
+            from "user" u
+                     inner join user_component uc on
+                u.id = uc."user"
+                     inner join component c on c.id = uc.component
+            where u.tg_id = {self.tg_id}
+            group by c.name, c.description, c.parts, c.id
+            order by c.id) collected) stat
+group by stat.id, stat.name, stat.description, stat.parts
+order by stat.id;
+
+        '''
+        result: CursorResult = db.session.execute(query)
+
+        text = '*Ваш прогресс:*\n'
+        for index, r in enumerate(result):
+            text += f'{"✅" if int(r["collected"])>=int(r["parts"]) else ""} {index+1}) {r["name"]} {r["collected"]}/{r["parts"]} {""}\n'
+
+        return text
+
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -248,7 +278,7 @@ class Quiz(db.Model):
             btns = []
 
             for index, qqv in enumerate(next_question.get_variants()):
-                text += f'\n{index+1}) {qqv.variant}'
+                text += f'\n\n{index+1}) {qqv.variant}'
                 btns.append([InlineKeyboardButton(text=str(index+1), callback_data=f'answer_{qqv.id}')])
             result = {
                 'text': text,
@@ -271,6 +301,7 @@ class QuizQuestion(db.Model):
     def get_quiz(self) -> Quiz:
         return Quiz.query.get(self.quiz)
 
+
 class QuizQuestionVariant(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     question = db.Column(db.Integer, db.ForeignKey('quiz_question.id', ondelete='CASCADE'))
@@ -285,6 +316,7 @@ class Component(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text)
     description = db.Column(db.Text)
+    parts = db.Column(db.Integer)
 
 
 class UserComponent(db.Model):
