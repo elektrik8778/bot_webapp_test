@@ -146,4 +146,5 @@ async def final_battle(uid):
     for c in components:
         db.session.delete(c)
     db.session.commit()
+    db.session.remove()
     return 'ok'
