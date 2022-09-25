@@ -22,6 +22,7 @@ class Config(object):
     db = os.environ.get('POSTGRES_DB')
     SQLALCHEMY_DATABASE_URI = f'postgresql+psycopg2://{user}:{pw}@{url}/{db}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_POOL_SIZE = 1000
 
     USERS_PER_PAGE = 20
     UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'uploads')
