@@ -28,6 +28,11 @@ async def test1():
     return 'ok'
 
 
+@bp.route('/test2')
+def test2():
+    return 'ok'
+
+
 @bp.route('/castle')
 # @bp.route('/', methods=['GET', 'POST'])
 def index():
