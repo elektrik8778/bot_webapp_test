@@ -113,49 +113,52 @@ async def final_battle(uid):
     bot = get_bot()
 
     # получить компоненты пользователя
-    query_txt = f'''
-select *
-from (
-select stat.id, stat.name, stat.description, sum(stat.collected) collected, stat.parts, (stat.parts - sum(stat.collected)) rest
-from (select c.id, c.name, c.description, c.parts, 0 as collected
-      from component c
+#     query_txt = f'''
+# select *
+# from (
+# select stat.id, stat.name, stat.description, sum(stat.collected) collected, stat.parts, (stat.parts - sum(stat.collected)) rest
+# from (select c.id, c.name, c.description, c.parts, 0 as collected
+#       from component c
+#
+#       union all
+#
+#       select *
+#       from (select c.id, c.name, c.description, c.parts, count(uc) as collected
+#             from "user" u
+#                      inner join user_component uc on
+#                 u.id = uc."user"
+#                      inner join component c on c.id = uc.component
+#             where u.tg_id = {user.tg_id}
+#             group by c.name, c.description, c.parts, c.id
+#             order by c.id) collected) stat
+# group by stat.id, stat.name, stat.description, stat.parts
+# order by stat.id) all_stat
+# where rest<=0;
+#
+#     '''
+#     components: CursorResult = db.session.execute(query_txt)
+#     components_count = components.rowcount
+    user_components = UserComponent.query.filter(UserComponent.user == user.id).all()
 
-      union all
-
-      select *
-      from (select c.id, c.name, c.description, c.parts, count(uc) as collected
-            from "user" u
-                     inner join user_component uc on
-                u.id = uc."user"
-                     inner join component c on c.id = uc.component
-            where u.tg_id = {user.tg_id}
-            group by c.name, c.description, c.parts, c.id
-            order by c.id) collected) stat
-group by stat.id, stat.name, stat.description, stat.parts
-order by stat.id) all_stat
-where rest<=0;
-
-    '''
-    components: CursorResult = db.session.execute(query_txt)
-    components_count = components.rowcount
+    print(len(user_components), len(Component.query.all()))
 
     # если собраны все, то победа
     # если их меньше, то поражение с первого раза
     text = ''
-    if components_count == len(Component.query.all()):
+    if len(user_components) == len(Component.query.all()):
         text = texts.FINAL_BATTLE_WIN
         if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.fid')):
             vfile = os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.fid')
         else:
             vfile = os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.mp4')
     else:
-        if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count+1}.fid')):
-            vfile = os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count+1}.fid')
+        text = texts.FINAL_BATTLE_LOSE
+        if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {len(user_components)+1}.fid')):
+            vfile = os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {len(user_components)+1}.fid')
         else:
-            vfile = os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count + 1}.mp4')
+            vfile = os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {len(user_components) + 1}.mp4')
 
     try:
-        text = texts.FINAL_BATTLE_LOSE
         if vfile.split('.')[-1] == 'mp4':
             with open(vfile, 'rb') as video:
                 result = await bot.send_video(chat_id=uid,
@@ -163,7 +166,7 @@ where rest<=0;
                                               caption=text,
                                               parse_mode=ParseMode.MARKDOWN,
                                               protect_content=True)
-                with open(os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count+1}.fid'), 'w') as fid:
+                with open(os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {len(user_components)+1}.fid'), 'w') as fid:
                     fid.write(result.video.file_id)
         else:
             with open(vfile, 'r') as video:
