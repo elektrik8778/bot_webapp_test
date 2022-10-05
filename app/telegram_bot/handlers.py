@@ -147,7 +147,7 @@ async def quest_way(update: Update, context: CallbackContext.DEFAULT_TYPE):
         if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad lose 1.fid')):
             with open(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad lose 1.fid'), 'r') as video:
                 await update.effective_message.reply_video(video=video.read(),
-                                                           caption='БезNADежный SOC разгромлен. Случилось неприемлемое!  Чтобы этого не произошло в реальной организации, нужен верный подход к обнаружению атак. Подробности расскажем 27 сентября (ссылка на лендинг)')
+                                                           caption=texts.FINAL_BATTLE_LAZY_LOSE)
     db.session.remove()
     return
 
