@@ -2,7 +2,7 @@ from app import db
 from app.main import bp
 from app.telegram_bot import texts
 from flask import render_template, request, make_response
-from app.models import User, QuestProcess, Component, UserComponent
+from app.models import User, QuestProcess, Component, UserComponent, Tag
 from config import Config
 from app.telegram_bot.routes import get_bot
 from app.telegram_bot.texts import quest_start
@@ -147,6 +147,9 @@ async def final_battle(uid):
     text = ''
     if len(user_components) == len(Component.query.all()):
         text = texts.FINAL_BATTLE_WIN
+        tag: Tag = Tag.query.filter(Tag.name == 'Победил в квесте').first()
+        user.add_tag(tag)
+        db.session.commit()
         if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.fid')):
             vfile = os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.fid')
         else:
