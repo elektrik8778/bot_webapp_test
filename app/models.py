@@ -255,6 +255,7 @@ class QuestProcess(db.Model):
     user = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     started = db.Column(db.DateTime)
     status = db.Column(db.Text)
+    current_message = db.Column(db.BIGINT)
 
 
 class Quiz(db.Model):
@@ -286,6 +287,7 @@ class Quiz(db.Model):
             }
             return result
         except Exception as e:
+            print(user, e)
             return None
 
 
@@ -317,6 +319,7 @@ class Component(db.Model):
     name = db.Column(db.Text)
     description = db.Column(db.Text)
     parts = db.Column(db.Integer)
+    filename = db.Column(db.Text)
 
 
 class UserComponent(db.Model):

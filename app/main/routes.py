@@ -1,7 +1,8 @@
 from app import db
 from app.main import bp
+from app.telegram_bot import texts
 from flask import render_template, request, make_response
-from app.models import User, QuestProcess
+from app.models import User, QuestProcess, Component, UserComponent
 from config import Config
 from app.telegram_bot.routes import get_bot
 from app.telegram_bot.texts import quest_start
@@ -11,6 +12,7 @@ import json
 import os
 import random
 from string import ascii_letters
+from sqlalchemy.engine.cursor import CursorResult
 
 
 @bp.route('/test1')
@@ -111,16 +113,37 @@ async def final_battle(uid):
     bot = get_bot()
 
     # получить компоненты пользователя
-    components = user.get_components()
-    components_count = len(components)
+    query_txt = f'''
+select *
+from (
+select stat.id, stat.name, stat.description, sum(stat.collected) collected, stat.parts, (stat.parts - sum(stat.collected)) rest
+from (select c.id, c.name, c.description, c.parts, 0 as collected
+      from component c
 
-    # если их 5, то победа
-    # если их 0, то поражение с первого раза
-    # если их N, то поражение со второго раза
-    # если их 2, то поражение с третьего раза
-    # если их 3, то поражение с четвертого раза
-    # если их 4, то поражение с пятого раза
-    if components_count == 5:
+      union all
+
+      select *
+      from (select c.id, c.name, c.description, c.parts, count(uc) as collected
+            from "user" u
+                     inner join user_component uc on
+                u.id = uc."user"
+                     inner join component c on c.id = uc.component
+            where u.tg_id = {user.tg_id}
+            group by c.name, c.description, c.parts, c.id
+            order by c.id) collected) stat
+group by stat.id, stat.name, stat.description, stat.parts
+order by stat.id) all_stat
+where rest<=0;
+
+    '''
+    components: CursorResult = db.session.execute(query_txt)
+    components_count = components.rowcount
+
+    # если собраны все, то победа
+    # если их меньше, то поражение с первого раза
+    text = ''
+    if components_count == len(Component.query.all()):
+        text = texts.FINAL_BATTLE_WIN
         if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.fid')):
             vfile = os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.fid')
         else:
@@ -131,20 +154,31 @@ async def final_battle(uid):
         else:
             vfile = os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count + 1}.mp4')
 
-    if vfile.split('.')[-1] == 'mp4':
-        with open(vfile, 'rb') as video:
-            result = await bot.send_video(chat_id=uid,
-                                          video=video,
-                                          caption='Ваша финальная битва')
-            with open(os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count+1}.fid'), 'w') as fid:
-                fid.write(result.video.file_id)
-    else:
-        with open(vfile, 'r') as video:
-            result = await bot.send_video(chat_id=uid,
-                                          video=video.read(),
-                                          caption='Ваша финальная битва')
-    for c in components:
+    try:
+        text = texts.FINAL_BATTLE_LOSE
+        if vfile.split('.')[-1] == 'mp4':
+            with open(vfile, 'rb') as video:
+                result = await bot.send_video(chat_id=uid,
+                                              video=video,
+                                              caption=text,
+                                              parse_mode=ParseMode.MARKDOWN,
+                                              protect_content=True)
+                with open(os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {components_count+1}.fid'), 'w') as fid:
+                    fid.write(result.video.file_id)
+        else:
+            with open(vfile, 'r') as video:
+                result = await bot.send_video(chat_id=uid,
+                                              video=video.read(),
+                                              caption=text,
+                                              parse_mode=ParseMode.MARKDOWN,
+                                              protect_content=True)
+    except Exception as e:
+        print(user, e)
+
+    # удаляем компоненты пользователя
+    for c in UserComponent.query.filter(UserComponent.user == user.id).all():
         db.session.delete(c)
     db.session.commit()
+
     db.session.remove()
     return 'ok'

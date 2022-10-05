@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.pool import QueuePool
 from flask_migrate import Migrate
 from flask_login import LoginManager
 # from flask_mail import Mail
@@ -9,7 +10,10 @@ from telegram.ext import ApplicationBuilder
 from flask_cors import CORS
 from flask_bootstrap import Bootstrap
 
-
+# engine_options = {
+#     'pool': QueuePool(creator=SQLAlchemy.create_engine(sa_url=Config.SQLALCHEMY_DATABASE_URI, engine_opts=None), pool_size=100, max_overflow=100, timeout=30, use_lifo=False)
+# }
+# engine = SQLAlchemy.create_engine(sa_url=Config.SQLALCHEMY_DATABASE_URI, engine_opts=)
 db = SQLAlchemy()
 migrate = Migrate()
 login = LoginManager()
