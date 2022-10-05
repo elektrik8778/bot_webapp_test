@@ -147,7 +147,9 @@ async def quest_way(update: Update, context: CallbackContext.DEFAULT_TYPE):
         if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad lose 1.fid')):
             with open(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad lose 1.fid'), 'r') as video:
                 await update.effective_message.reply_video(video=video.read(),
-                                                           caption=texts.FINAL_BATTLE_LAZY_LOSE)
+                                                           caption=texts.FINAL_BATTLE_LAZY_LOSE,
+                                                           parse_mode=ParseMode.MARKDOWN,
+                                                           protect_content=True)
     db.session.remove()
     return
 
