@@ -13,14 +13,26 @@
     <link rel="stylesheet" href="../../static/css/fonts.css"></link>
     <title>{{ title }}</title>
 </head>
-<body>
-<main class="container-fluid" style="min-height: 100vh; background-color: black; font-family: '8BIT WONDER'">
+<body style="box-sizing: border-box">
+<main class="container-fluid" style="min-height: 100vh;
+        background-image: url('{{ url_for('static', filename='images/castle_page/background.jpg') }}');
+        background-repeat: repeat-y;
+        background-size: cover;
+        font-family: 'TT Positive';">
     <section id="greeting" class="text-center pt-2">
         <span id="greeting-text" class="nes-text is-primary"></span>
     </section>
-    <section id="achieves" class="text-center pt-2" hidden></section>
-    <section id="pers-wrapper" style="height: 30vh; display: flex">
-        <i id="pers" class="nes-octocat animate text-center" style="margin: auto" hidden></i>
+    <section id="achieves" class="row" hidden></section>
+    <section id="pers-wrapper" style="height: 25vh; display: flex">
+{#        <i id="pers" class="nes-octocat animate text-center" style="margin: auto" hidden></i>#}
+        <div id="pers" style="
+                margin: auto;
+                height: 150px;
+                width: 150px;
+                background-image: url('{{ url_for('static', filename='images/components/pocemonball.png') }}');
+                background-size: cover;
+                background-repeat: no-repeat;
+                " hidden></div>
         <div id="pers-is-absent" class="message -left" style="margin: auto" hidden>
             <div class="nes-balloon from-left is-dark">
               <p>вы ушли проходить квест</p>
@@ -34,7 +46,7 @@
                 <a id="start-quest" class="nes-btn is-success" href="#" style="text-decoration: none">Пройти квест</a>
             </div>
             <div class="col-12">
-                <a id="final-battle" class="nes-btn is-error" href="#" style="text-decoration: none">Финальная битва</a>
+                <a id="final-battle" class="nes-btn is-error" href="#" style="text-decoration: none; font-family: '8BIT WONDER'; width: 90%;">Финальная битва</a>
             </div>
         </div>
     </section>
@@ -48,6 +60,8 @@
 
     let uid = localStorage.uid;
     initPers()
+        .then(()=>checkComponentsHeights())
+
 
     let startQuestBtn = document.querySelector('#start-quest')
     let finalBattleBtn = document.querySelector('#final-battle')
@@ -67,34 +81,55 @@
             finalBattleBtn.style.display = 'inline-block';
         }
 
-        let currentUser =  await fetch(`/get_user/${uid}`);
-        if (currentUser.ok) {
-            currentUser.text().then(txt=>{
-                document.querySelector('#greeting-text').textContent = `Привет, ${txt}!`
-            })
-        }
+        {# подгрузка имени пользовтеля и приветствия #}
+        {#let currentUser =  await fetch(`/get_user/${uid}`);#}
+        {#if (currentUser.ok) {#}
+        {#    currentUser.text().then(txt=>{#}
+        {#        document.querySelector('#greeting-text').textContent = `Привет, ${txt}!`#}
+        {#    })}#}
 
         let components = await fetch(`/get_components/${uid}`)
         components.json().then(result=>{
             let achieves = document.querySelector('#achieves')
             if (result) achieves.innerHTML = ''
             for (let c of result) {
+                let achieve_wrapper_wrapper = document.createElement('div')
+                achieve_wrapper_wrapper.classList.add('col-4')
+                achieve_wrapper_wrapper.style.padding = '1%'
+
                 let achieve_wrapper = document.createElement('div')
-                achieve_wrapper.style.maxWidth = '18%';
-                achieve_wrapper.style.marginRight = '3px';
-                achieve_wrapper.style.display = 'inline-grid';
-                let achieve_pic_wrapper = document.createElement('p');
-                achieve_pic_wrapper.classList.add('mb-0');
-                let achieve_pic = document.createElement('i');
-                achieve_pic.classList.add('nes-icon', 'is-large', 'trophy');
+                achieve_wrapper.style.background = 'rgba(255,255,255,.5)'
+                achieve_wrapper.style.borderRadius = '10px'
+                achieve_wrapper.style.textAlign = 'center'
+                achieve_wrapper.style.height = '125px'
+                {#achieve_wrapper.style.paddingBottom = '1px'#}
+                achieve_wrapper.classList.add('achieve-wrapper')
+
+                let achieve_pic = document.createElement('div')
+                achieve_pic.style.width = '80px'
+                achieve_pic.style.height = '80px'
+                achieve_pic.style.backgroundImage = 'url({{ url_for('static', filename='images/components/') }}'+c.filename+')'
+                achieve_pic.style.backgroundSize = 'contain'
+                achieve_pic.style.marginLeft = 'auto'
+                achieve_pic.style.marginRight = 'auto'
+
                 let achieve_descr = document.createElement('p');
+                achieve_descr.style.marginLeft = '4%'
+                achieve_descr.style.marginRight = '4%'
+                achieve_descr.style.paddingLeft = '4%'
+                achieve_descr.style.paddingRight = '4%'
                 achieve_descr.classList.add('mt-0');
-                achieve_descr.style.fontSize = '6px';
+                achieve_descr.style.fontSize = '10px';
                 achieve_descr.style.color = 'white';
+                achieve_descr.style.lineHeight = '11px'
+                achieve_descr.style.marginTop = 'auto';
+                achieve_descr.style.marginBottom = 'auto';
                 achieve_descr.textContent = c.name;
-                achieves.append(achieve_wrapper)
-                achieve_wrapper.append(achieve_pic_wrapper, achieve_descr)
-                achieve_pic_wrapper.append(achieve_pic)
+                achieves.append(achieve_wrapper_wrapper)
+                achieve_wrapper.append(achieve_pic, achieve_descr)
+                achieve_wrapper_wrapper.append(achieve_wrapper)
+                {#achieve_pic_wrapper.append(achieve_pic)#}
+
             }
             achieves.removeAttribute('hidden')
         })
@@ -112,6 +147,18 @@
         bot.close()
         bot.close()
     }
+    function checkComponentsHeights() {
+        {#let height = 0#}
+        {#for (let w of document.querySelectorAll('.achieve-wrapper')) {#}
+        {#    let style = window.getComputedStyle(w)#}
+        {#    let h = parseInt(style.getPropertyValue('height'))#}
+        {#    if (h > height) {#}
+        {#        height = h#}
+        {#    }#}
+       // {#}#}
+        {#for (let w of document.querySelectorAll('.achieve-wrapper')) w.style.height = `${height}px`#}
+    }
+
 </script>
 </body>
 </html>

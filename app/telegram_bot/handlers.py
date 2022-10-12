@@ -20,6 +20,7 @@ async def get_bot_pic(name, folder='start'):
         with open(os.path.join(dir, f'{name}.png'), 'rb') as photo:
             result = await get_bot().send_photo(chat_id=os.environ.get('ADMIN_TG_ID'),
                                                 photo=photo)
+            result.delete()
         with open(os.path.join(dir, f'{name}.fid'), 'w') as fid:
             fid.write(result.photo[-1].file_id)
 
@@ -47,10 +48,6 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
     db.session.commit()
 
-    btns = [[
-        InlineKeyboardButton(text='ДА!', callback_data='way_1'),
-        InlineKeyboardButton(text='НЕ СЕЙЧАС!', callback_data='way_2'),
-    ]]
     # после регистрации нового пользователя проверяем, не проходит ли он квест в данный момент
     if qp := QuestProcess.query.filter(QuestProcess.user == user.id).first():
         from app.telegram_bot.routes import get_bot
@@ -91,28 +88,71 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
         quest_process.user = user.id
         db.session.add(quest_process)
         db.session.commit()
+
+        btn_next = InlineKeyboardButton(text='Далее >>', callback_data='screen_1_1_2')
+        await update.effective_message.reply_photo(caption=texts.SCREEN_1,
+                                                   photo=await get_bot_pic('1'),
+                                                   reply_markup=InlineKeyboardMarkup(inline_keyboard=[[btn_next]]),
+                                                   parse_mode=ParseMode.MARKDOWN,
+                                                   protect_content=True)
+
         # await update.effective_message.reply_photo(caption=texts.greeting(user),
         #                                            photo=await get_bot_pic('0'),
         #                                            parse_mode=ParseMode.MARKDOWN)
-        media = [
-            InputMediaPhoto(media=await get_bot_pic('0'), caption=texts.greeting(user), parse_mode=ParseMode.MARKDOWN),
-            InputMediaPhoto(media=await get_bot_pic('1'), caption=texts.SCREEN_1, parse_mode=ParseMode.MARKDOWN),
-            InputMediaPhoto(media=await get_bot_pic('2'), caption=texts.SCREEN_2, parse_mode=ParseMode.MARKDOWN),
-            InputMediaPhoto(media=await get_bot_pic('3'), caption=texts.SCREEN_3, parse_mode=ParseMode.MARKDOWN)
-        ]
+        # media = [
+        #     InputMediaPhoto(media=await get_bot_pic('0'), caption=texts.greeting(user), parse_mode=ParseMode.MARKDOWN),
+        #     InputMediaPhoto(media=await get_bot_pic('1'), caption=texts.SCREEN_1, parse_mode=ParseMode.MARKDOWN),
+        #     InputMediaPhoto(media=await get_bot_pic('2'), caption=texts.SCREEN_2, parse_mode=ParseMode.MARKDOWN),
+        #     InputMediaPhoto(media=await get_bot_pic('3'), caption=texts.SCREEN_3, parse_mode=ParseMode.MARKDOWN)
+        # ]
+        #
+        # await update.effective_message.reply_media_group(media=media, protect_content=True)
 
-        await update.effective_message.reply_media_group(media=media, protect_content=True)
-
-        result = await update.effective_message.reply_photo(caption=texts.SCREEN_4,
-                                                            photo=await get_bot_pic('4'),
-                                                            reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
-                                                            parse_mode=ParseMode.MARKDOWN,
-                                                            protect_content=True)
-        quest_process.current_message = result.message_id
-        db.session.commit()
+        # result = await update.effective_message.reply_photo(caption=texts.SCREEN_4,
+        #                                                     photo=await get_bot_pic('4'),
+        #                                                     reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
+        #                                                     parse_mode=ParseMode.MARKDOWN,
+        #                                                     protect_content=True)
+        # quest_process.current_message = result.message_id
+        # db.session.commit()
 
     db.session.remove()
     return
+
+
+@with_app_context
+async def show_screen(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    next_screen = int(update.callback_query.data.split('_')[-1])
+    prev_screen = int(update.callback_query.data.split('_')[-2])
+    direction = int(update.callback_query.data.split('_')[-3])
+
+    btns = []
+    battle_btns = []
+    keyboard = []
+    if prev_screen+direction>-1:
+        btn_prev = InlineKeyboardButton(text='<< Назад', callback_data=f'screen_-1_{prev_screen - 1}_{next_screen - 1}')
+        btns.append(btn_prev)
+    if next_screen+direction<4:
+        btn_next = InlineKeyboardButton(text='Далее >>', callback_data=f'screen_1_{prev_screen + 1}_{next_screen + 1}')
+        btns.append(btn_next)
+    if next_screen+direction>=4:
+        battle_btns = [
+            InlineKeyboardButton(text='ДА!', callback_data='way_1'),
+            InlineKeyboardButton(text='НЕ СЕЙЧАС!', callback_data='way_2'),
+        ]
+    if btns:
+        keyboard.append(btns)
+    if battle_btns:
+        keyboard.append(battle_btns)
+
+    media = InputMediaPhoto(media=await get_bot_pic(str(next_screen)))
+
+    await update.effective_message.edit_media(media=media)
+    await update.effective_message.edit_caption(caption=texts.get_screen_text(next_screen),
+                                                parse_mode=ParseMode.MARKDOWN)
+    await update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard))
+    return
+
 
 
 @with_app_context

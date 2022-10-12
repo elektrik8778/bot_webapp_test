@@ -37,6 +37,7 @@ def set_bot_handlers(application):
     # application.add_handler(CallbackQueryHandler(pattern='event', callback=handlers.send_event))
     # application.add_handler(CallbackQueryHandler(pattern='cancelorder', callback=handlers.cancel_order))
     application.add_handler(CallbackQueryHandler(pattern='hidemsg', callback=handlers.hide_msg))
+    application.add_handler(CallbackQueryHandler(pattern='screen', callback=handlers.show_screen))
     application.add_handler(CallbackQueryHandler(pattern='way', callback=handlers.quest_way))
     application.add_handler(CallbackQueryHandler(pattern='answer', callback=handlers.quiz_answer))
     application.add_handler(CallbackQueryHandler(pattern='component', callback=handlers.collect_component))

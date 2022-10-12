@@ -63,7 +63,8 @@ def get_components(uid):
         result.append({
             'id': uc.component,
             'name': c.name,
-            'description': c.description
+            'description': c.description,
+            'filename': c.filename+'_web.png'
         })
     db.session.remove()
     return json.dumps(result)
