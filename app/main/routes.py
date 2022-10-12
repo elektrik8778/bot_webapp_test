@@ -13,6 +13,7 @@ import os
 import random
 from string import ascii_letters
 from sqlalchemy.engine.cursor import CursorResult
+from datetime import datetime
 
 
 @bp.route('/test1')
@@ -141,8 +142,6 @@ async def final_battle(uid):
 #     components_count = components.rowcount
     user_components = UserComponent.query.filter(UserComponent.user == user.id).all()
 
-    print(len(user_components), len(Component.query.all()))
-
     # если собраны все, то победа
     # если их меньше, то поражение с первого раза
     text = ''
@@ -185,6 +184,7 @@ async def final_battle(uid):
     # удаляем компоненты пользователя
     for c in UserComponent.query.filter(UserComponent.user == user.id).all():
         db.session.delete(c)
+    user.finished_quest = datetime.now()
     db.session.commit()
 
     db.session.remove()

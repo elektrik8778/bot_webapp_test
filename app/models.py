@@ -51,6 +51,7 @@ class User(UserMixin, db.Model):
     unsubscribed = db.Column(db.Boolean, default=False)
     source = db.Column(db.Text)
     # promo_codes = db.Column(db.JSON)
+    finished_quest = db.Column(db.DateTime)
 
     def set_unsubscribed(self):
         self.unsubscribed = True

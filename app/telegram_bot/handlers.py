@@ -4,7 +4,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMe
 from app.telegram_bot.helpers import with_app_context
 from telegram.ext import CallbackContext
 from telegram.constants import ParseMode
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.telegram_bot import texts
 import json
 import os
@@ -56,17 +56,18 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
                                                   protect_content=True)
         # если статус процесса квеста = None, повторяем сообщение с картинкой 4
         if qp.status is None:
-            try:
-                await get_bot().delete_message(chat_id=user.tg_id, message_id=qp.current_message)
-            except Exception as e:
-                print(user, e)
-            result = await update.effective_message.reply_photo(caption=texts.SCREEN_4,
-                                                                photo=await get_bot_pic('4'),
-                                                                reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
-                                                                parse_mode=ParseMode.MARKDOWN,
-                                                                protect_content=True)
-            qp.current_message = result.message_id
-            db.session.commit()
+            pass
+            # try:
+            #     await get_bot().delete_message(chat_id=user.tg_id, message_id=qp.current_message)
+            # except Exception as e:
+            #     print(user, e)
+            # result = await update.effective_message.reply_photo(caption=texts.SCREEN_4,
+            #                                                     photo=await get_bot_pic('4'),
+            #                                                     reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
+            #                                                     parse_mode=ParseMode.MARKDOWN,
+            #                                                     protect_content=True)
+            # qp.current_message = result.message_id
+            # db.session.commit()
         # иначе отправляем текущий вопрос
         else:
             quiz: Quiz = Quiz.query.get(qp.status.split('_')[1])
@@ -83,6 +84,11 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
                 qp.current_message = result.message_id
                 db.session.commit()
     else:
+        if user.finished_quest:
+            rest = 3600 - (datetime.now()-user.finished_quest).total_seconds()
+            if rest > 0:
+                await update.effective_message.reply_text(f'Квест можно пробовать пройти 1 раз в час. Ваша следующая попытка будет доступна в {(datetime.now()+timedelta(seconds=rest)).strftime("%H:%M %d.%m.%y")} ')
+                return
         # если не проходит - создаем процесс квеста, отдаём приветствие и заезд на игру
         quest_process = QuestProcess()
         quest_process.user = user.id
