@@ -87,7 +87,7 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
         if user.finished_quest:
             rest = 3600 - (datetime.now()-user.finished_quest).total_seconds()
             if rest > 0:
-                await update.effective_message.reply_text(f'Квест можно пробовать пройти 1 раз в час. Ваша следующая попытка будет доступна в {(datetime.now()+timedelta(seconds=rest)).strftime("%H:%M %d.%m.%y")} ')
+                await update.effective_message.reply_text(f'Квест можно пробовать пройти 1 раз в час. Ваша следующая попытка будет доступна через {int(rest/60)} минут')
                 return
         # если не проходит - создаем процесс квеста, отдаём приветствие и заезд на игру
         quest_process = QuestProcess()
