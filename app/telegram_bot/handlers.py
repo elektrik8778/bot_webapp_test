@@ -20,7 +20,7 @@ async def get_bot_pic(name, folder='start'):
         with open(os.path.join(dir, f'{name}.png'), 'rb') as photo:
             result = await get_bot().send_photo(chat_id=os.environ.get('ADMIN_TG_ID'),
                                                 photo=photo)
-            result.delete()
+            await result.delete()
         with open(os.path.join(dir, f'{name}.fid'), 'w') as fid:
             fid.write(result.photo[-1].file_id)
 
@@ -51,30 +51,19 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
     # после регистрации нового пользователя проверяем, не проходит ли он квест в данный момент
     if qp := QuestProcess.query.filter(QuestProcess.user == user.id).first():
         from app.telegram_bot.routes import get_bot
-        # если проходит
+        # если проходит, то уведомляем его
         await update.effective_message.reply_text('Вы в процессе прохождения квеста, дойдите до конца.',
                                                   protect_content=True)
-        # если статус процесса квеста = None, повторяем сообщение с картинкой 4
-        if qp.status is None:
-            pass
-            # try:
-            #     await get_bot().delete_message(chat_id=user.tg_id, message_id=qp.current_message)
-            # except Exception as e:
-            #     print(user, e)
-            # result = await update.effective_message.reply_photo(caption=texts.SCREEN_4,
-            #                                                     photo=await get_bot_pic('4'),
-            #                                                     reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
-            #                                                     parse_mode=ParseMode.MARKDOWN,
-            #                                                     protect_content=True)
-            # qp.current_message = result.message_id
-            # db.session.commit()
-        # иначе отправляем текущий вопрос
-        else:
+        # и если статус процесса не пустой, отправляем текущий вопрос
+        if qp.status is not None:
             quiz: Quiz = Quiz.query.get(qp.status.split('_')[1])
             question = quiz.get_next_question(user)
             if question:
                 try:
-                    await get_bot().delete_message(chat_id=user.tg_id, message_id=qp.current_message)
+                    # await get_bot().delete_message(chat_id=user.tg_id, message_id=qp.current_message)
+                    await get_bot().edit_message_reply_markup(chat_id=user.tg_id,
+                                                              message_id=qp.current_message,
+                                                              reply_markup=None)
                 except Exception as e:
                     print(user, e)
                 result = await update.effective_message.reply_text(text=question['text'],
@@ -101,26 +90,6 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
                                                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[[btn_next]]),
                                                    parse_mode=ParseMode.MARKDOWN,
                                                    protect_content=True)
-
-        # await update.effective_message.reply_photo(caption=texts.greeting(user),
-        #                                            photo=await get_bot_pic('0'),
-        #                                            parse_mode=ParseMode.MARKDOWN)
-        # media = [
-        #     InputMediaPhoto(media=await get_bot_pic('0'), caption=texts.greeting(user), parse_mode=ParseMode.MARKDOWN),
-        #     InputMediaPhoto(media=await get_bot_pic('1'), caption=texts.SCREEN_1, parse_mode=ParseMode.MARKDOWN),
-        #     InputMediaPhoto(media=await get_bot_pic('2'), caption=texts.SCREEN_2, parse_mode=ParseMode.MARKDOWN),
-        #     InputMediaPhoto(media=await get_bot_pic('3'), caption=texts.SCREEN_3, parse_mode=ParseMode.MARKDOWN)
-        # ]
-        #
-        # await update.effective_message.reply_media_group(media=media, protect_content=True)
-
-        # result = await update.effective_message.reply_photo(caption=texts.SCREEN_4,
-        #                                                     photo=await get_bot_pic('4'),
-        #                                                     reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
-        #                                                     parse_mode=ParseMode.MARKDOWN,
-        #                                                     protect_content=True)
-        # quest_process.current_message = result.message_id
-        # db.session.commit()
 
     db.session.remove()
     return
@@ -158,7 +127,6 @@ async def show_screen(update: Update, context: CallbackContext.DEFAULT_TYPE):
                                                 parse_mode=ParseMode.MARKDOWN)
     await update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard))
     return
-
 
 
 @with_app_context
@@ -209,37 +177,39 @@ async def quiz_answer(update: Update, context: CallbackContext.DEFAULT_TYPE):
     await update.effective_message.edit_reply_markup(reply_markup=None)
     current_question_number = int(qp.status.split('_')[-1])
     qp.status = f'quiz_{quiz.id}_question_{current_question_number + 1}'
+    db.session.commit()
 
+    btn_next_question = InlineKeyboardButton(text='Следующий вопрос', callback_data=f'nextquestion_{quiz.id}_{current_question_number + 1}')
     if variant.components:
-        # высылаем компоненты на выбор
-        # components = Component.query.filter(Component.id.in_(variant.components)).all()
-        # btns = []
-        # for c in components:
-        #     btns.append([InlineKeyboardButton(text=c.name, callback_data=f'component_{c.id}')])
-        # await update.effective_message.reply_text(text='Это верный ответ, выбирайте компонент защиты',
-        #                                           reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
-        #                                           parse_mode=ParseMode.MARKDOWN)
-        # btns = []
-        # text = '*Это верный ответ. Какую награду вы хотите за него?*'
-        # for index, components_set in enumerate(variant.components):
-        #     components = Component.query.filter(Component.id.in_(components_set)).all()
-        #     text += f'\n\n{index+1})'
-        #     text += ', '.join([c.name for c in components])
-        #     btns.append([InlineKeyboardButton(text=str(index+1), callback_data=f'component_{components_set}')])
-        # await update.effective_message.reply_text(text=text,
-        #                                           reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
-        #                                           parse_mode=ParseMode.MARKDOWN)
         for c in Component.query.filter(Component.id.in_(variant.components)).all():
             user_component = UserComponent()
             user_component.user = user.id
             user_component.component = c.id
             db.session.add(user_component)
-            await update.effective_message.reply_photo(photo=await get_bot_pic(c.filename, 'components'),
-                                                       caption=f'Это правильный ответ, вы получаете\n\n*{c.name}*\n_{c.description}_',
-                                                       parse_mode=ParseMode.MARKDOWN,
-                                                       protect_content=True)
+        result = await update.effective_message.reply_photo(photo=await get_bot_pic(c.filename, 'components'),
+                                                            caption=f'Это правильный ответ, вы получаете\n\n*{c.name}*',
+                                                            parse_mode=ParseMode.MARKDOWN,
+                                                            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[btn_next_question]]),
+                                                            protect_content=True)
+        qp.current_message = result.message_id
+        db.session.commit()
+    else:
+        result = await update.effective_message.reply_text(text=f'Это неправильный ответ',
+                                                           parse_mode=ParseMode.MARKDOWN,
+                                                           reply_markup=InlineKeyboardMarkup(inline_keyboard=[[btn_next_question]]),
+                                                           protect_content=True)
+        qp.current_message = result.message_id
         db.session.commit()
 
+    db.session.remove()
+    return
+
+
+async def next_question(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
+    quiz: Quiz = Quiz.query.get(int(update.callback_query.data.split('_')[-2]))
+    qp: QuestProcess = user.get_quest_process()
+    await update.effective_message.edit_reply_markup(reply_markup=None)
     # высылаем следующий вопрос
     question = quiz.get_next_question(user)
     if question:
@@ -253,13 +223,13 @@ async def quiz_answer(update: Update, context: CallbackContext.DEFAULT_TYPE):
         db.session.delete(qp)
         web_app = WebAppInfo(url=f'https://{os.environ.get("TG_ADDR")}/castle')
         btns = [
-            [MenuButtonWebApp('Замок', web_app=web_app)],
-            # [InlineKeyboardButton(text='Финальная битва', callback_data='finalbattle')]
+            [MenuButtonWebApp('Замок', web_app=web_app)]
         ]
-        result = await update.effective_message.reply_text(text='Вопросов больше нет. Перейди в замок и узнай, сколько героев-защитников удалось собрать.',
-                                                           reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
-                                                           parse_mode=ParseMode.MARKDOWN,
-                                                           protect_content=True)
+        result = await update.effective_message.reply_text(
+            text='Вопросов больше нет. Перейди в замок и узнай, сколько героев-защитников удалось собрать.',
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
+            parse_mode=ParseMode.MARKDOWN,
+            protect_content=True)
         qp.current_message = result.message_id
 
     db.session.commit()

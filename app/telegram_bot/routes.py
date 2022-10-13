@@ -40,6 +40,7 @@ def set_bot_handlers(application):
     application.add_handler(CallbackQueryHandler(pattern='screen', callback=handlers.show_screen))
     application.add_handler(CallbackQueryHandler(pattern='way', callback=handlers.quest_way))
     application.add_handler(CallbackQueryHandler(pattern='answer', callback=handlers.quiz_answer))
+    application.add_handler(CallbackQueryHandler(pattern='nextquestion', callback=handlers.next_question))
     application.add_handler(CallbackQueryHandler(pattern='component', callback=handlers.collect_component))
     application.add_handler(CallbackQueryHandler(pattern='finalbattle', callback=handlers.final_battle))
 

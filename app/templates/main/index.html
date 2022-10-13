@@ -32,20 +32,14 @@
                 background-image: url('{{ url_for('static', filename='images/components/pocemonball.png') }}');
                 background-size: cover;
                 background-repeat: no-repeat;
-                " hidden></div>
-        <div id="pers-is-absent" class="message -left" style="margin: auto" hidden>
-            <div class="nes-balloon from-left is-dark">
-              <p>вы ушли проходить квест</p>
-            </div>
-            <i class="nes-bcrikko"></i>
-        </div>
+                "></div>
     </section>
     <section id="controls">
         <div class="row text-center">
             <div class="col-6" style="display: none">
                 <a id="start-quest" class="nes-btn is-success" href="#" style="text-decoration: none">Пройти квест</a>
             </div>
-            <div class="col-12">
+            <div id="final-battle-btn-wrapper" class="col-12" hidden>
                 <a id="final-battle" class="nes-btn is-error" href="#" style="text-decoration: none; font-family: '8BIT WONDER'; width: 90%;">Финальная битва</a>
             </div>
         </div>
@@ -60,8 +54,6 @@
 
     let uid = localStorage.uid;
     initPers()
-        .then(()=>checkComponentsHeights())
-
 
     let startQuestBtn = document.querySelector('#start-quest')
     let finalBattleBtn = document.querySelector('#final-battle')
@@ -69,17 +61,15 @@
     finalBattleBtn.addEventListener('click', finalBattle)
 
     async function initPers() {
-        let response =  await fetch(`/check_quest_process/${uid}`);
-        if (response.status === 200) {
-            document.querySelector('#pers-is-absent').removeAttribute('hidden')
-            startQuestBtn.style.display = 'none';
-            finalBattleBtn.style.display = 'none';
-        }
-        else {
-            document.querySelector('#pers').removeAttribute('hidden')
-            startQuestBtn.style.display = 'inline-block';
-            finalBattleBtn.style.display = 'inline-block';
-        }
+        {#let response =  await fetch(`/check_quest_process/${uid}`);#}
+        {#if (response.status === 200) {#}
+        {#    document.querySelector('#pers-is-absent').removeAttribute('hidden')#}
+        {#    startQuestBtn.style.display = 'none';#}
+        {#    finalBattleBtn.style.display = 'none';}#}
+        {#else {#}
+        {#    document.querySelector('#pers').removeAttribute('hidden')#}
+        {#    startQuestBtn.style.display = 'inline-block';#}
+        {#    finalBattleBtn.style.display = 'inline-block';}#}
 
         {# подгрузка имени пользовтеля и приветствия #}
         {#let currentUser =  await fetch(`/get_user/${uid}`);#}
@@ -91,7 +81,11 @@
         let components = await fetch(`/get_components/${uid}`)
         components.json().then(result=>{
             let achieves = document.querySelector('#achieves')
-            if (result) achieves.innerHTML = ''
+            if (result) {
+                achieves.innerHTML = ''
+                if (result.length > 0)
+                    document.querySelector('#final-battle-btn-wrapper').removeAttribute('hidden')
+            }
             for (let c of result) {
                 let achieve_wrapper_wrapper = document.createElement('div')
                 achieve_wrapper_wrapper.classList.add('col-4')
@@ -146,17 +140,6 @@
         })
         bot.close()
         bot.close()
-    }
-    function checkComponentsHeights() {
-        {#let height = 0#}
-        {#for (let w of document.querySelectorAll('.achieve-wrapper')) {#}
-        {#    let style = window.getComputedStyle(w)#}
-        {#    let h = parseInt(style.getPropertyValue('height'))#}
-        {#    if (h > height) {#}
-        {#        height = h#}
-        {#    }#}
-       // {#}#}
-        {#for (let w of document.querySelectorAll('.achieve-wrapper')) w.style.height = `${height}px`#}
     }
 
 </script>
