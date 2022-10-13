@@ -2,7 +2,4 @@
   font-family: '8BIT WONDER';
   src: url('../../static/fonts/8BIT WONDER(RUS BY LYAJKA)/8bitwonderrusbylyajka_nominal.otf') format('opentype');
 }
-@font-face {
-  font-family: 'TT Positive';
-  src: url('../../static/fonts/TT-Positive/TT Positive DemiBold.ttf') format('truetype');
-}
+
