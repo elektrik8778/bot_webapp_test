@@ -10,19 +10,28 @@ import json
 import os
 
 
-async def get_bot_pic(name, folder='start'):
+async def get_bot_pic(name, folder='start', format='png'):
     from app.telegram_bot.routes import get_bot
     dir = os.path.join(Config.STATIC_FOLDER, 'images', folder)
     if not os.path.exists(dir):
         os.makedirs(dir)
 
     if not os.path.exists(os.path.join(dir, f'{name}.fid')):
-        with open(os.path.join(dir, f'{name}.png'), 'rb') as photo:
-            result = await get_bot().send_photo(chat_id=os.environ.get('ADMIN_TG_ID'),
-                                                photo=photo)
+        photo_formats = ['png', 'jpg', 'jpeg']
+        video_formats = ['mp4']
+        with open(os.path.join(dir, f'{name}.{format}'), 'rb') as media:
+            if format in photo_formats:
+                result = await get_bot().send_photo(chat_id=os.environ.get('ADMIN_TG_ID'),
+                                                    photo=media)
+            elif format in video_formats:
+                result = await get_bot().send_video(chat_id=os.environ.get('ADMIN_TG_ID'),
+                                                    video=media)
             await result.delete()
         with open(os.path.join(dir, f'{name}.fid'), 'w') as fid:
-            fid.write(result.photo[-1].file_id)
+            if format in photo_formats:
+                fid.write(result.photo[-1].file_id)
+            elif format in video_formats:
+                fid.write(result.video.file_id)
 
     with open(os.path.join(dir, f'{name}.fid'), 'r') as fid:
         return fid.read()
@@ -142,7 +151,6 @@ async def quest_way(update: Update, context: CallbackContext.DEFAULT_TYPE):
         quest_process.status = f'quiz_{quiz.id}_question_0'
         db.session.commit()
         pic = f'[.]({quiz.pic_link})' if quiz.pic_link else ''
-        # await update.effective_message.reply_text(f'{quiz.description} {pic}', parse_mode=ParseMode.MARKDOWN)
         question = quiz.get_next_question(user)
         if question:
             result = await update.effective_message.reply_text(text=question['text'],
@@ -158,12 +166,10 @@ async def quest_way(update: Update, context: CallbackContext.DEFAULT_TYPE):
         db.session.commit()
 
         # высылаем видео с поражением
-        if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad lose 1.fid')):
-            with open(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad lose 1.fid'), 'r') as video:
-                await update.effective_message.reply_video(video=video.read(),
-                                                           caption=texts.FINAL_BATTLE_LAZY_LOSE,
-                                                           parse_mode=ParseMode.MARKDOWN,
-                                                           protect_content=True)
+        await update.effective_message.reply_video(video=await get_bot_pic(name='lose_full', folder='final_battle', format='mp4'),
+                                                   caption=texts.FINAL_BATTLE_LAZY_LOSE,
+                                                   parse_mode=ParseMode.MARKDOWN,
+                                                   protect_content=True)
     db.session.remove()
     return
 
@@ -225,8 +231,9 @@ async def next_question(update: Update, context: CallbackContext.DEFAULT_TYPE):
         btns = [
             [MenuButtonWebApp('Замок', web_app=web_app)]
         ]
-        result = await update.effective_message.reply_text(
-            text='Вопросов больше нет. Перейди в замок и узнай, сколько героев-защитников удалось собрать.',
+        result = await update.effective_message.reply_video(
+            video=await get_bot_pic(name='components_collected', folder='final_battle', format='mp4'),
+            caption='Вопросов больше нет. Перейди в замок и узнай, сколько героев-защитников удалось собрать.',
             reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
             parse_mode=ParseMode.MARKDOWN,
             protect_content=True)

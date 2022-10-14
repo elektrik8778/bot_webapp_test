@@ -111,73 +111,29 @@ async def quest(uid):
 
 @bp.route('/final_battle/<uid>')
 async def final_battle(uid):
+    from app.telegram_bot.handlers import get_bot_pic
     user: User = User.query.filter(User.tg_id == int(uid)).first()
     bot = get_bot()
-
-    # получить компоненты пользователя
-#     query_txt = f'''
-# select *
-# from (
-# select stat.id, stat.name, stat.description, sum(stat.collected) collected, stat.parts, (stat.parts - sum(stat.collected)) rest
-# from (select c.id, c.name, c.description, c.parts, 0 as collected
-#       from component c
-#
-#       union all
-#
-#       select *
-#       from (select c.id, c.name, c.description, c.parts, count(uc) as collected
-#             from "user" u
-#                      inner join user_component uc on
-#                 u.id = uc."user"
-#                      inner join component c on c.id = uc.component
-#             where u.tg_id = {user.tg_id}
-#             group by c.name, c.description, c.parts, c.id
-#             order by c.id) collected) stat
-# group by stat.id, stat.name, stat.description, stat.parts
-# order by stat.id) all_stat
-# where rest<=0;
-#
-#     '''
-#     components: CursorResult = db.session.execute(query_txt)
-#     components_count = components.rowcount
     user_components = UserComponent.query.filter(UserComponent.user == user.id).all()
 
     # если собраны все, то победа
-    # если их меньше, то поражение с первого раза
+    # если их меньше, то поражение
     text = ''
-    if len(user_components) == len(Component.query.all()):
+    if len(user_components) >= len(Component.query.all()):
         text = texts.FINAL_BATTLE_WIN
         tag: Tag = Tag.query.filter(Tag.name == 'Победил в квесте').first()
         user.add_tag(tag)
         db.session.commit()
-        if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.fid')):
-            vfile = os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.fid')
-        else:
-            vfile = os.path.join(Config.STATIC_FOLDER, 'video', 'pt nad win.mp4')
+        video = await get_bot_pic(name='win', folder='final_battle', format='mp4')
     else:
         text = texts.FINAL_BATTLE_LOSE
-        if os.path.exists(os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {len(user_components)+1}.fid')):
-            vfile = os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {len(user_components)+1}.fid')
-        else:
-            vfile = os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {len(user_components) + 1}.mp4')
-
+        video = await get_bot_pic(name='lose_1_8', folder='final_battle', format='mp4')
     try:
-        if vfile.split('.')[-1] == 'mp4':
-            with open(vfile, 'rb') as video:
-                result = await bot.send_video(chat_id=uid,
-                                              video=video,
-                                              caption=text,
-                                              parse_mode=ParseMode.MARKDOWN,
-                                              protect_content=True)
-                with open(os.path.join(Config.STATIC_FOLDER, 'video', f'pt nad lose {len(user_components)+1}.fid'), 'w') as fid:
-                    fid.write(result.video.file_id)
-        else:
-            with open(vfile, 'r') as video:
-                result = await bot.send_video(chat_id=uid,
-                                              video=video.read(),
-                                              caption=text,
-                                              parse_mode=ParseMode.MARKDOWN,
-                                              protect_content=True)
+        result = await bot.send_video(chat_id=uid,
+                                      video=video,
+                                      caption=text,
+                                      parse_mode=ParseMode.MARKDOWN,
+                                      protect_content=True)
     except Exception as e:
         print(user, e)
 
