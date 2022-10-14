@@ -38,7 +38,7 @@ FINAL_BATTLE_WIN = '''
 
 Осталось узнать, кто получит призовой лутбокс.
 
-Вдруг это ты? Объявим на  [трансляции 27 октября](https://promo.ptsecurity.com/pt-nad-11/?utm_source=tg&utm_medium=game&utm_campaign=nad-11&utm_content=bot).
+Вдруг это ты? Объявим на [трансляции 27 октября](https://promo.ptsecurity.com/pt-nad-11/?utm_source=tg&utm_medium=game&utm_campaign=nad-11&utm_content=bot).
 
 Чтобы пройти квест заново  -  отправьте команду /start
 '''
