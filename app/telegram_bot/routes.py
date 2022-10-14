@@ -43,6 +43,9 @@ def set_bot_handlers(application):
     application.add_handler(CallbackQueryHandler(pattern='nextquestion', callback=handlers.next_question))
     application.add_handler(CallbackQueryHandler(pattern='component', callback=handlers.collect_component))
     application.add_handler(CallbackQueryHandler(pattern='finalbattle', callback=handlers.final_battle))
+    application.add_handler(CallbackQueryHandler(pattern='additionalQuestions', callback=handlers.additional_questions))
+    application.add_handler(CallbackQueryHandler(pattern='escapeAdditionalQuestions', callback=handlers.escape_additional_questions))
+
 
     # payments
     # application.add_handler(PreCheckoutQueryHandler(callback=payments.pre_checkout))

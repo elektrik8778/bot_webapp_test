@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from app.telegram_bot import texts
 import json
 import os
+from random import choice
 
 
 async def get_bot_pic(name, folder='start', format='png'):
@@ -192,18 +193,55 @@ async def quiz_answer(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
     btn_next_question = InlineKeyboardButton(text='Следующий вопрос', callback_data=f'nextquestion_{quiz.id}_{current_question_number + 1}')
     if variant.components:
-        for c in Component.query.filter(Component.id.in_(variant.components)).all():
+        if variant.components[0] == 0:
+            user_components = UserComponent.query.filter(UserComponent.user == user.id).all()
+            components = Component.query.all()
+            components_diff = list(set(components)-set(user_components))
+            component = choice(components_diff)
             user_component = UserComponent()
             user_component.user = user.id
-            user_component.component = c.id
+            user_component.component = component.id
             db.session.add(user_component)
-        result = await update.effective_message.reply_photo(photo=await get_bot_pic(c.filename, 'components'),
-                                                            caption=f'Это правильный ответ, вы получаете\n\n*{c.name}*',
-                                                            parse_mode=ParseMode.MARKDOWN,
-                                                            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[btn_next_question]]),
-                                                            protect_content=True)
-        qp.current_message = result.message_id
-        db.session.commit()
+            result = await update.effective_message.reply_photo(photo=await get_bot_pic(component.filename, 'components'),
+                                                                caption=f'Это правильный ответ, вы получаете\n\n*{component.name}*',
+                                                                parse_mode=ParseMode.MARKDOWN,
+                                                                reply_markup=InlineKeyboardMarkup(inline_keyboard=[[btn_next_question]]),
+                                                                protect_content=True)
+            qp.current_message = result.message_id
+            db.session.commit()
+        else:
+            for c in Component.query.filter(Component.id.in_(variant.components)).all():
+                user_component = UserComponent()
+                user_component.user = user.id
+                user_component.component = c.id
+                db.session.add(user_component)
+                result = await update.effective_message.reply_photo(photo=await get_bot_pic(c.filename, 'components'),
+                                                                    caption=f'Это правильный ответ, вы получаете\n\n*{c.name}*',
+                                                                    parse_mode=ParseMode.MARKDOWN,
+                                                                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[[btn_next_question]]),
+                                                                    protect_content=True)
+                qp.current_message = result.message_id
+                db.session.commit()
+        user_components_count = len(UserComponent.query.filter(UserComponent.user == user.id).all())
+        components_count = len(Component.query.all())
+        if user_components_count >= components_count:
+            from app.telegram_bot.routes import get_bot
+            await get_bot().edit_message_reply_markup(chat_id=user.tg_id,
+                                                      message_id=qp.current_message,
+                                                      reply_markup=None)
+            db.session.delete(qp)
+            web_app = WebAppInfo(url=f'https://{os.environ.get("TG_ADDR")}/castle')
+            btns = [
+                [MenuButtonWebApp('Замок', web_app=web_app)]
+            ]
+            result = await update.effective_message.reply_video(
+                video=await get_bot_pic(name='components_collected', folder='final_battle', format='mp4'),
+                caption='Вопросов больше нет. Перейди в замок и узнай, сколько героев-защитников удалось собрать.',
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
+                parse_mode=ParseMode.MARKDOWN,
+                protect_content=True)
+            qp.current_message = result.message_id
+            db.session.commit()
     else:
         result = await update.effective_message.reply_text(text=f'Это неправильный ответ',
                                                            parse_mode=ParseMode.MARKDOWN,
@@ -231,19 +269,77 @@ async def next_question(update: Update, context: CallbackContext.DEFAULT_TYPE):
         qp.current_message = result.message_id
         db.session.commit()
     else:
-        db.session.delete(qp)
-        web_app = WebAppInfo(url=f'https://{os.environ.get("TG_ADDR")}/castle')
-        btns = [
-            [MenuButtonWebApp('Замок', web_app=web_app)]
-        ]
-        result = await update.effective_message.reply_video(
-            video=await get_bot_pic(name='components_collected', folder='final_battle', format='mp4'),
-            caption='Вопросов больше нет. Перейди в замок и узнай, сколько героев-защитников удалось собрать.',
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
-            parse_mode=ParseMode.MARKDOWN,
-            protect_content=True)
-        qp.current_message = result.message_id
+        # вот тут проверяем сколько элементов не хватает
+        user_components_count = len(UserComponent.query.filter(UserComponent.user == user.id).all())
+        components_count = len(Component.query.all())
+        # если более трех или 0, то отдаем "Вопросов больше нет"
+        if (components_count - user_components_count) > 3 or (components_count - user_components_count) == 0 or quiz.id == 2:
+            db.session.delete(qp)
+            web_app = WebAppInfo(url=f'https://{os.environ.get("TG_ADDR")}/castle')
+            btns = [
+                [MenuButtonWebApp('Замок', web_app=web_app)]
+            ]
+            result = await update.effective_message.reply_video(
+                video=await get_bot_pic(name='components_collected', folder='final_battle', format='mp4'),
+                caption='Вопросов больше нет. Перейди в замок и узнай, сколько героев-защитников удалось собрать.',
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
+                parse_mode=ParseMode.MARKDOWN,
+                protect_content=True)
+            qp.current_message = result.message_id
+        # иначе даем столько доп вопросов, сколько не хватает компонентов
+        else:
+            text = f'У вас есть {user_components_count} из {components_count} героев защитников. Чтобы собрать все, ответьте еще на {components_count-user_components_count} {"вопроса" if components_count-user_components_count>1 else "вопрос"} правильно.'
+            btn_ok = InlineKeyboardButton(text='Ок', callback_data=f'additionalQuestions_{components_count-user_components_count}')
+            btn_cancel = InlineKeyboardButton(text='Не хочу', callback_data='escapeAdditionalQuestions')
+            reply_markup = InlineKeyboardMarkup(inline_keyboard=[[btn_ok, btn_cancel]])
+            await update.effective_message.reply_text(text=text,
+                                                      reply_markup=reply_markup,
+                                                      parse_mode=ParseMode.MARKDOWN,
+                                                      protect_content=True)
 
+    db.session.commit()
+    db.session.remove()
+    return
+
+
+async def additional_questions(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    # await update.effective_message.edit_reply_markup(reply_markup=None)
+    user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
+    quiz: Quiz = Quiz.query.get(2)
+    qp: QuestProcess = user.get_quest_process()
+    qp.status = f'quiz_{quiz.id}_question_0'
+    db.session.commit()
+    # высылаем следующий вопрос
+    question = quiz.get_next_question(user)
+    if question:
+        result = await update.effective_message.reply_text(text=question['text'],
+                                                           reply_markup=question['reply_markup'],
+                                                           parse_mode=ParseMode.MARKDOWN,
+                                                           protect_content=True)
+        qp.current_message = result.message_id
+        db.session.commit()
+
+    db.session.remove()
+    return
+
+
+async def escape_additional_questions(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    await update.effective_message.edit_reply_markup(reply_markup=None)
+    user: User = User.query.filter(User.tg_id == update.effective_user.id).first()
+    qp: QuestProcess = user.get_quest_process()
+
+    db.session.delete(qp)
+    web_app = WebAppInfo(url=f'https://{os.environ.get("TG_ADDR")}/castle')
+    btns = [
+        [MenuButtonWebApp('Замок', web_app=web_app)]
+    ]
+    result = await update.effective_message.reply_video(
+        video=await get_bot_pic(name='components_collected', folder='final_battle', format='mp4'),
+        caption='Вопросов больше нет. Перейди в замок и узнай, сколько героев-защитников удалось собрать.',
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=btns),
+        parse_mode=ParseMode.MARKDOWN,
+        protect_content=True)
+    qp.current_message = result.message_id
     db.session.commit()
     db.session.remove()
     return
