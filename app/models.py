@@ -333,3 +333,11 @@ class UserComponent(db.Model):
 
     def get_component(self) -> Component:
         return Component.query.get(self.component)
+
+
+class UserQuest(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+    start = db.Column(db.DateTime)
+    finish = db.Column(db.DateTime)
+    result = db.Column(db.Text)

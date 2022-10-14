@@ -1,5 +1,6 @@
 from app import db, Config
-from app.models import User, Group, Quiz, QuestProcess, QuizQuestion, QuizQuestionVariant, Component, UserComponent
+from app.models import User, Group, Quiz, QuestProcess, QuizQuestion, QuizQuestionVariant, Component, UserComponent, \
+    UserQuest
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, MenuButtonWebApp, WebAppInfo
 from app.telegram_bot.helpers import with_app_context
 from telegram.ext import CallbackContext
@@ -149,6 +150,10 @@ async def quest_way(update: Update, context: CallbackContext.DEFAULT_TYPE):
     if quiz:
         quest_process: QuestProcess = QuestProcess.query.filter(QuestProcess.user == user.id).first()
         quest_process.status = f'quiz_{quiz.id}_question_0'
+        user_quest = UserQuest()
+        user_quest.user = user.id
+        user_quest.start = datetime.now()
+        db.session.add(user_quest)
         db.session.commit()
         pic = f'[.]({quiz.pic_link})' if quiz.pic_link else ''
         question = quiz.get_next_question(user)

@@ -2,7 +2,7 @@ from app import db
 from app.main import bp
 from app.telegram_bot import texts
 from flask import render_template, request, make_response
-from app.models import User, QuestProcess, Component, UserComponent, Tag
+from app.models import User, QuestProcess, Component, UserComponent, Tag, UserQuest
 from config import Config
 from app.telegram_bot.routes import get_bot
 from app.telegram_bot.texts import quest_start
@@ -115,7 +115,8 @@ async def final_battle(uid):
     user: User = User.query.filter(User.tg_id == int(uid)).first()
     bot = get_bot()
     user_components = UserComponent.query.filter(UserComponent.user == user.id).all()
-
+    user_quest: UserQuest = UserQuest.query.filter(UserQuest.user == user.id).order_by(UserQuest.id.desc()).first()
+    user_quest.finish = datetime.now()
     # если собраны все, то победа
     # если их меньше, то поражение
     text = ''
@@ -125,9 +126,11 @@ async def final_battle(uid):
         user.add_tag(tag)
         db.session.commit()
         video = await get_bot_pic(name='win', folder='final_battle', format='mp4')
+        user_quest.result = 'win'
     else:
         text = texts.FINAL_BATTLE_LOSE
         video = await get_bot_pic(name='lose_1_8', folder='final_battle', format='mp4')
+        user_quest.result = 'lose'
     try:
         result = await bot.send_video(chat_id=uid,
                                       video=video,
@@ -141,7 +144,7 @@ async def final_battle(uid):
     for c in UserComponent.query.filter(UserComponent.user == user.id).all():
         db.session.delete(c)
     user.finished_quest = datetime.now()
-    db.session.commit()
 
+    db.session.commit()
     db.session.remove()
     return 'ok'
