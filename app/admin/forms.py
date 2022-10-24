@@ -125,3 +125,10 @@ class EventForm(FlaskForm):
     description = TextAreaField('Описание')
     poster = MultipleFileField('Афиша')
     save_event = SubmitField('Сохранить')
+
+
+class PrizeForm(FlaskForm):
+    name = StringField('Название')
+    description = TextAreaField('Описание')
+    pic = FileField('Картинка')
+    add = SubmitField('Сохранить')

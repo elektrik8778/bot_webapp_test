@@ -52,6 +52,10 @@ class User(UserMixin, db.Model):
     source = db.Column(db.Text)
     # promo_codes = db.Column(db.JSON)
     finished_quest = db.Column(db.DateTime)
+    prize = db.Column(db.Integer, db.ForeignKey('prizes.id', ondelete='SET NULL'))
+
+    def get_prize(self):
+        return Prizes.query.get(self.prize)
 
     def set_unsubscribed(self):
         self.unsubscribed = True
@@ -341,3 +345,10 @@ class UserQuest(db.Model):
     start = db.Column(db.DateTime)
     finish = db.Column(db.DateTime)
     result = db.Column(db.Text)
+
+
+class Prizes(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+    pic = db.Column(db.Text)

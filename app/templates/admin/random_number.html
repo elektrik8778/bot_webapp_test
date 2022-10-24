@@ -1,0 +1,223 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block navbar %}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        @font-face {
+          font-family: 'TT-Positive';
+          src: url('{{ url_for('static', filename='fonts/TT-Positive/TT Positive Regular.ttf') }}') format('opentype');
+        }
+    </style>
+
+    <style>
+        body {
+            background: #F2F5F8;
+        }
+        h3{
+            font-size: 60px;
+            font-family: TT-Positive;
+        }
+        h5 {
+            font-size: 40px;
+            font-family: TT-Positive;
+        }
+        #carouselPrizes {
+            background: white;
+            border-radius: 50px;
+            height: 50vh;
+            width: 80vw;
+            margin: 0 auto;
+        }
+        .carousel-inner, .carousel-item{
+            height: 100% !important;
+        }
+        .carousel-item img{
+            height: 100%;
+        }
+        .carousel-caption h5 {
+            color: red;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .carousel-caption p {
+            font-family: TT-Positive;
+            font-size: 24px;
+            color: #333333;
+        }
+        .carousel-control-prev{
+            margin-left: -15%;
+            background: url("{{ url_for('static', filename='images/decor/prev.png') }}");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .carousel-control-prev-icon, .carousel-control-next-icon{
+            visibility: hidden;
+        }
+        .carousel-control-next{
+            margin-right: -15%;
+            background: url("{{ url_for('static', filename='images/decor/next.png') }}");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .carousel-indicators{
+            visibility: hidden;
+        }
+        #submit-prizes {
+            font-family: TT-Positive;
+            font-weight: 100;
+            background: red;
+            color: white;
+            border-radius: 15px;
+            font-size: 18px;
+        }
+
+        .hid{
+            display: none!important;
+        }
+
+        #prizes_count {
+            font-family: TT-Positive;
+            border-radius: 15px;
+            width: 100px;
+            font-size: 18px;
+        }
+        .winner-number {
+            font-family: 'Press Start 2P', cursive;
+            padding: 10px;
+            background: white;
+            border-radius: 15px;
+            font-size: 24px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row p-4">
+            <div class="col d-flex align-content-center flex-wrap">
+                <h3 class="">РОЗЫГРЫШ ПРИЗОВ</h3>
+            </div>
+            <div class="col d-flex align-items-end flex-column">
+                <img class="" src="{{ url_for('static', filename='images/decor/cup.png') }}">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div id="carouselPrizes" class="carousel carousel-dark slide" data-bs-interval="false" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        {% for p in prizes %}
+                            <button type="button" data-bs-target="#carouselPrizes" data-bs-slide-to="{{ (loop.index - 1)|string }}" {% if loop.index==1 %}class="active" aria-current="true"{% endif %} aria-current="true" aria-label="Slide {{ loop.index }}"></button>
+                        {% endfor %}
+                    </div>
+                    <div class="carousel-inner">
+                        {% for p in prizes %}
+                            <div {% if loop.index == 1 %}class="carousel-item active"{% else %} class="carousel-item" {% endif %}>
+                                <img src="{{ url_for('static', filename='uploads/prizes/'+p.pic) }}" class="d-block m-auto" alt="prize {{ loop.index }}">
+                                <div class="carousel-caption d-md-block">
+                                    <h5 class="">{{ p.name }}</h5>
+                                    <p class="">{{ p.description }}</p>
+                                    <p class="prize" data-pid="{{ p.id }}" hidden>{{ p.id }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselPrizes" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselPrizes" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3 mb-1">
+            <div class="col-5 m-auto">
+                <form>
+                    <div class="row">
+                        <div class="col text-center">
+{#                            <label for="prizes_count">Количество</label>#}
+                            <div class="d-inline-flex align-content-end flex-wrap">
+                                <input id="prizes_count" class="form-control" min="1" max="100" type="number" value="1">
+                            </div>
+                            <div class="d-inline-flex align-content-end flex-wrap">
+                                <span style="font-family: TT-Positive; font-size: 18px;">шт.</span>
+                            </div>
+                            <div class="d-inline-flex align-content-center flex-wrap" style="margin-left: 5%!important;">
+                                <a id="submit-prizes" class="btn d-inline">Разыграть</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="row p-4">
+            <div class="col">
+                <h5 class="mb-5">НОМЕРА ПОБЕДИТЕЛЕЙ</h5>
+                <div class="row text-center" id="prizers">
+                    {% for n in numbers %}
+                        <div class="col-auto mb-5">
+                            <span class="winner-number">{{ n.tg_id }}: {{ n.first_name }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        $('#submit-prizes').click(submitPrizes)
+        let myCarousel = document.getElementById('carouselPrizes')
+        myCarousel.addEventListener('slid.bs.carousel', updatePrizers)
+        myCarousel.addEventListener('slid.bs.carousel', showBtn)
+
+        function showBtn() {
+            document.querySelector('#submit-prizes').classList.remove('hid')
+        }
+        function submitPrizes(e) {
+            document.querySelector('#submit-prizes').classList.add('hid')
+            let count = $('#prizes_count').val()
+            let pid = $('.carousel-item.active .prize').data('pid')
+            $.ajax({
+                url: '/admin/distribute_prizes',
+                method: 'post',
+                data: JSON.stringify({
+                    pid: pid,
+                    count: count
+                }),
+                success: (e)=>{
+                    if (e!=='None') {
+                        updatePrizers()
+                    }
+                }
+            })
+
+        }
+
+        function updatePrizers(numbers) {
+            $('#prizers').empty()
+            let pid = $('.carousel-item.active .prize').data('pid')
+            $.ajax({
+                url: `/admin/get_prizers/${pid}`,
+                method: 'get',
+                success: (e)=>{
+                    if (e!=='None') {
+                        for (let n of JSON.parse(e)) {
+                            console.log(n)
+                            $('#prizers').append(
+                                `<div class="col-auto mb-5">
+                                    <span class="winner-number">${n.n}: ${n.user}</span>
+                                </div>`
+                            )
+                        }
+                    }
+                }
+            })
+        }
+    </script>
+{% endblock %}

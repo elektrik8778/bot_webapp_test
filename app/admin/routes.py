@@ -8,16 +8,16 @@ import time
 import zipfile
 from datetime import datetime, timedelta
 from app import db
-# from app import bot
+from app.telegram_bot.routes import get_bot
 from app.admin import bp
-from app.models import User, Group, Tag, UserTag, ScheduledMessage
+from app.models import User, Group, Tag, UserTag, ScheduledMessage, Prizes
 from app.admin.forms import ChangeWebhookForm, ScheduledMessageCreateForm, SendTGMessageForm, SendGroupTGMessageForm,\
     CreateGroupForm, CreateModerForm, CreateQuestionForm, EditQuizForm, PrizeForm
 from config import Config
 from flask_login import login_required, current_user
 from flask import render_template, redirect, url_for, request, send_from_directory, flash, make_response
 from werkzeug.utils import secure_filename
-# from telegram import TelegramError, ParseMode
+from telegram.constants import ParseMode
 from telegram.error import BadRequest, TelegramError
 # from app.telegram_bot.handlers import greet_user, create_button_map, get_inline_menu
 from app.telegram_bot.helpers import with_app_context
@@ -481,3 +481,125 @@ def gen_reg():
             second.write(f'{i}\n')
 
     return 'ok'
+
+
+@bp.get('/admin/random_lottery_number')
+def random_lottery_number():
+    prizes = Prizes.query.all()
+    numbers = User.query.filter(User.prize != None).all()
+    return render_template('/admin/random_number.html',
+                           prizes=prizes,
+                           numbers=numbers)
+
+
+@bp.get('/admin/prizes')
+def prizes():
+    form = PrizeForm()
+    prizes = Prizes.query.all()
+    return render_template('/admin/prizes.html',
+                           form=form,
+                           prizes=prizes)
+
+
+@bp.post('/admin/prizes')
+def prizes_post():
+    form = PrizeForm()
+
+    if form.validate_on_submit():
+        p = Prizes()
+        prizes_pic_dir = os.path.join('app', 'static', 'uploads', 'prizes')
+        p.name = form.name.data
+        p.description = form.description.data
+        if f := form.pic.data:
+            if not os.path.exists(prizes_pic_dir):
+                os.makedirs(prizes_pic_dir)
+            f.save(os.path.join(prizes_pic_dir, f.filename))
+            p.pic = f.filename
+        db.session.add(p)
+        db.session.commit()
+
+    return redirect(request.referrer)
+
+
+@bp.get('/admin/del_prize/<pid>')
+def del_prize(pid):
+    p = Prizes.query.get(int(pid))
+    if os.path.exists(f := os.path.join('app', 'static', 'uploads', 'prizes', p.pic)):
+        os.remove(f)
+    db.session.delete(p)
+    db.session.commit()
+    return redirect(request.referrer)
+
+
+@bp.post('/admin/distribute_prizes')
+async def distribute_prizes():
+    data = json.loads(request.get_data())
+    pid = int(data['pid'])
+    count = int(data['count'])
+    p = Prizes.query.get(pid)
+    lottery_numbers = User.query.join(UserTag, UserTag.user_id == User.id).filter(UserTag.tag_id == 1, User.prize == None).all()
+
+    def randomize_numbers(numbers, count):
+        nset = set(numbers)
+        if len(nset) == count:
+            return nset
+        return randomize_numbers(list(nset)+random.choices(population=lottery_numbers, k=count-len(nset)), count)
+
+    if not (len(lottery_numbers) < count):
+        numbers = randomize_numbers(random.choices(population=lottery_numbers, k=count), count)
+        for n in numbers:
+            n.was_drawn = True
+            n.prize = pid
+            db.session.commit()
+            try:
+                bot = get_bot()
+                response = await bot.send_message(chat_id=n.tg_id,
+                                                  text=f'Вы выиграли приз *"{p.name}"*',
+                                                  parse_mode=ParseMode.MARKDOWN)
+                n.message_id = response.message_id
+                db.session.commit()
+            except Exception as e:
+                print(e)
+        return json.dumps([{
+            'n': x.id,
+            'user': x.first_name,
+            'prize': x.get_prize().name
+        } for x in numbers], ensure_ascii=False)
+    else:
+        print('Номерков недостаточно для розыгрыша такого количества призов')
+        return 'None'
+
+
+@bp.get('/admin/get_prizers/<pid>')
+def get_prizers(pid):
+    p = Prizes.query.get(pid)
+    lottery_numbers = User.query.filter(User.prize == p.id).all()
+
+    if lottery_numbers:
+        return json.dumps([{
+            'n': x.tg_id,
+            'user': x.first_name,
+            'prize': x.get_prize().name
+        } for x in lottery_numbers], ensure_ascii=False)
+    else:
+        return 'None'
+
+
+@bp.get('/admin/prizes_accounting')
+def prizes_accounting():
+    numbers = User.query.join(UserTag, UserTag.user_id == User.id).filter(UserTag.tag_id == 1).all()
+    print(numbers)
+    return render_template('/admin/prizes_accounting.html',
+                           numbers=numbers)
+
+
+@bp.get('/admin/give_prize/<nid>')
+def give_prize(nid):
+    n: LotteryNumber = LotteryNumber.query.get(int(nid))
+    n.got_flag = True
+    db.session.commit()
+    bot.send_message(chat_id=n.get_user().tg_id,
+                     text='Приз выдан',
+                     reply_to_message_id=n.message_id,
+                     parse_mode=ParseMode.MARKDOWN)
+    return redirect(request.referrer)
