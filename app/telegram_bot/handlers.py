@@ -12,6 +12,20 @@ import os
 from random import choice
 
 
+
+@with_app_context
+async def text_message(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    user: User = User.query.filter(User.tg_id == int(update.effective_user.id)).first()
+    for m in user.get_group().moderators:
+        from app.telegram_bot.routes import get_bot
+        await get_bot().send_message(chat_id=m.tg_id,
+                                     text=update.effective_message.text)
+
+    db.session.remove()
+    return
+
+
+
 async def get_bot_pic(name, folder='start', format='png'):
     from app.telegram_bot.routes import get_bot
     dir = os.path.join(Config.STATIC_FOLDER, 'images', folder)

@@ -8,7 +8,7 @@ from app.telegram_bot import handlers, payments
 import os
 from flask import request
 from pprint import pprint
-from telegram.ext import CommandHandler, MessageHandler, filters, CallbackQueryHandler, PreCheckoutQueryHandler
+from telegram.ext import CommandHandler, MessageHandler, CallbackQueryHandler, PreCheckoutQueryHandler, filters
 from telegram import LabeledPrice, InlineKeyboardButton, InlineKeyboardMarkup
 from app.models import User
 from sqlalchemy.engine import CursorResult
@@ -26,6 +26,8 @@ def get_bot() -> ApplicationBuilder.bot:
 
 def set_bot_handlers(application):
     application.add_handler(CommandHandler('start', handlers.start))
+
+    application.add_handler(MessageHandler(filters.TEXT, handlers.text_message))
     # application.add_handler(CommandHandler('help', handlers.help_command))
     # application.add_handler(CommandHandler('events', handlers.events))
     # application.add_handler(CommandHandler('ppay', handlers.send_pay))
