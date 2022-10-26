@@ -19,7 +19,8 @@ async def text_message(update: Update, context: CallbackContext.DEFAULT_TYPE):
     for m in user.get_group().moderators:
         from app.telegram_bot.routes import get_bot
         await get_bot().send_message(chat_id=m.tg_id,
-                                     text=update.effective_message.text)
+                                     text=f'{texts.tg_user_mention(user)}\n\n{update.effective_message.text}',
+                                     parse_mode=ParseMode.MARKDOWN)
 
     db.session.remove()
     return

@@ -110,3 +110,6 @@ def quest_start(user:User, way=0):
         text += '\n*Вы выбрали*\n'
         text += vars[int(way) - 1]
     return text
+
+def tg_user_mention(user):
+    return f'[{user.first_name}](tg://user?id={user.tg_id})'
