@@ -485,7 +485,7 @@ def gen_reg():
 
 @bp.get('/admin/random_lottery_number')
 def random_lottery_number():
-    prizes = Prizes.query.all()
+    prizes = Prizes.query.order_by(Prizes.id).all()
     numbers = User.query.filter(User.prize != None).all()
     return render_template('/admin/random_number.html',
                            prizes=prizes,
@@ -554,7 +554,7 @@ async def distribute_prizes():
             try:
                 bot = get_bot()
                 response = await bot.send_message(chat_id=n.tg_id,
-                                                  text=f'Вы выиграли приз *"{p.name}"*',
+                                                  text=p.message,
                                                   parse_mode=ParseMode.MARKDOWN)
                 n.message_id = response.message_id
                 db.session.commit()

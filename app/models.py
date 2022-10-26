@@ -352,3 +352,4 @@ class Prizes(db.Model):
     name = db.Column(db.Text)
     description = db.Column(db.Text)
     pic = db.Column(db.Text)
+    message = db.Column(db.Text)
