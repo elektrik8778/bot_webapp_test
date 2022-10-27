@@ -42,14 +42,8 @@ class CreateModerForm(FlaskForm):
     from app import create_app
     app = create_app(config_class=Config)
     with app.app_context():
-        group = SelectMultipleField('Группа',
-                                    query_factory=Group.query.all,
-                                    get_pk=lambda group: group.id,
-                                    get_label=lambda group: group.name)
-        user = SelectField('Пользователь',
-                           query_factory=User.query.filter(User.role == 'admin').all,
-                           get_pk=lambda user: user.tg_id,
-                           get_label=lambda user: user.first_name)
+        group = SelectMultipleField('Группа')
+        user = SelectField('Пользователь')
         submit = SubmitField('Добавить')
 
 
