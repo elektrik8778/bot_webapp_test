@@ -182,9 +182,9 @@ async def cron():
         db.session.commit()
 
     # Начинаем отправку запланированных
-    thr = threading.Thread(target=send_tasks)
-    thr.start()
-    # await send_tasks()
+    # thr = threading.Thread(target=send_tasks)
+    # thr.start()
+    await send_tasks()
     db.session.remove()
     return 'ok'
 
