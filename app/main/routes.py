@@ -2,7 +2,7 @@ from app import db
 from app.main import bp
 from app.telegram_bot import texts
 from flask import render_template, request, make_response
-from app.models import User, QuestProcess, Component, UserComponent, Tag, UserQuest
+from app.models import User, QuestProcess, Component, UserComponent, Tag, UserQuest, ScheduledMessage, TaskForSending
 from config import Config
 from app.telegram_bot.routes import get_bot
 from app.telegram_bot.texts import quest_start
@@ -14,6 +14,9 @@ import random
 from string import ascii_letters
 from sqlalchemy.engine.cursor import CursorResult
 from datetime import datetime
+import threading
+from app.telegram_bot.helpers import with_app_context
+from telegram.error import Forbidden as Unauthorized
 
 
 @bp.route('/test1')
@@ -148,3 +151,174 @@ async def final_battle(uid):
     db.session.commit()
     db.session.remove()
     return 'ok'
+
+
+@bp.route('/cron')
+async def cron():
+    scheduled_messages = ScheduledMessage.query.all()
+
+    for sm in scheduled_messages:
+        db.session.execute(f'''
+        insert into task_for_sending(user_id, scheduled_message_id, sent, deleted, plan_sending_time) (
+            select "user".id, scheduled_message.id, false, false, now()
+            from "user"
+                inner join scheduled_message on scheduled_message.id = {sm.id}
+                inner join "group" g on g.id = "user"."group"
+            where "user".tg_id is not null and "user".id not in
+            (
+                select user_id
+                from task_for_sending
+                where task_for_sending.scheduled_message_id ={sm.id}
+            )
+            and scheduled_message.date_time <= cast('{datetime.now()}' as timestamp) - interval '{os.environ.get("SERVER_TIME_ZONE")} hour' + cast(cast(g.time_zone as text) || ' hour' as interval)
+            and scheduled_message.sent is not true
+            {'and "user"."group" = scheduled_message."group"' if sm.group else ''}
+            order by scheduled_message.date_time
+        );
+        ''')
+        tasks_for_this_sm: TaskForSending = TaskForSending.query.filter(TaskForSending.scheduled_message_id == sm.id).all()
+        if tasks_for_this_sm:
+            sm.sent = True
+        db.session.commit()
+
+    # Начинаем отправку запланированных
+    thr = threading.Thread(target=send_tasks)
+    thr.start()
+    # await send_tasks()
+    db.session.remove()
+    return 'ok'
+
+
+# @with_app_context
+async def send_tasks():
+    tasks: TaskForSending = TaskForSending.query.filter(TaskForSending.sent == False).all()
+    bot = get_bot()
+    for task in tasks:
+        task_type = task.get_scheduled_message_type()
+        user = User.query.get(task.user_id)
+        scheduled_message = ScheduledMessage.query.get(task.scheduled_message_id)
+
+        if task_type == 'text':
+            text = scheduled_message.text
+            try:
+                response = await bot.send_message(chat_id=user.tg_id,
+                                            text=text,
+                                            parse_mode=ParseMode.MARKDOWN)
+                task.sent = True
+                task.message_id = response.message_id
+                task.fact_sending_time = response.date
+                db.session.commit()
+            except Unauthorized:
+                user.set_unsubscribed()
+                task.comment = 'Пользователь отписался'
+                db.session.commit()
+            except AttributeError:
+                print(f'AttributeError user_id={user.id}')
+                task.comment = 'AttributeError'
+                db.session.commit()
+            except:
+                task.comment = 'Ошибка tg_id'
+                db.session.commit()
+
+        if task_type == 'photo':
+            caption = scheduled_message.text
+            try:
+                response = bot.send_photo(chat_id=user.tg_id,
+                                          photo=scheduled_message.content_link,
+                                          caption=caption,
+                                          parse_mode=ParseMode.MARKDOWN)
+                task.sent = True
+                task.message_id = response.message_id
+                task.fact_sending_time = response.date
+                db.session.commit()
+            except Unauthorized:
+                user.set_unsubscribed()
+                task.comment = 'Пользователь отписался'
+                db.session.commit()
+            except AttributeError:
+                print(f'AttributeError user_id={user.id}')
+                task.comment = 'AttributeError'
+                db.session.commit()
+            except:
+                task.comment = 'Ошибка tg_id'
+                db.session.commit()
+        if task_type == 'video':
+            caption = scheduled_message.text
+            try:
+                response = bot.send_video(chat_id=user.tg_id,
+                                          video=scheduled_message.content_link,
+                                          caption=caption,
+                                          parse_mode=ParseMode.MARKDOWN)
+                task.sent = True
+                task.message_id = response.message_id
+                task.fact_sending_time = response.date
+                db.session.commit()
+            except Unauthorized:
+                user.set_unsubscribed()
+                task.comment = 'Пользователь отписался'
+                db.session.commit()
+            except AttributeError:
+                print(f'AttributeError user_id={user.id}')
+                task.comment = 'AttributeError'
+                db.session.commit()
+            except:
+                task.comment = 'Ошибка tg_id'
+                db.session.commit()
+        if task_type == 'poll':
+            poll_id = int(scheduled_message.text)
+            quiz = Quiz.query.get(poll_id)
+            buttons = [
+                {
+                    'text': 'Начинаем',
+                    'data': f'startQuiz_{poll_id}'
+                }
+            ]
+            map = create_button_map(buttons, 1)
+            reply_markup = get_inline_menu(map)
+            try:
+                response = bot.send_message(chat_id=user.tg_id,
+                                            text=quiz.description,
+                                            parse_mode=ParseMode.MARKDOWN,
+                                            reply_markup=reply_markup)
+                task.sent = True
+                task.message_id = response.message_id
+                task.fact_sending_time = response.date
+                db.session.commit()
+            except Unauthorized:
+                user.set_unsubscribed()
+                task.comment = 'Пользователь отписался'
+                db.session.commit()
+            except AttributeError:
+                print(f'AttributeError user_id={user.id}')
+                task.comment = 'AttributeError'
+                db.session.commit()
+            except:
+                task.comment = 'Ошибка tg_id'
+                db.session.commit()
+        if task_type == 'vote':
+            try:
+                voting = Voting.query.get(int(scheduled_message.text))
+                btns = [[InlineKeyboardButton(text=v, callback_data=f'vote_{voting.id}_{index}')] for index, v in
+                        enumerate(voting.variants)]
+                response = bot.send_message(chat_id=user.tg_id,
+                                            text=voting.question,
+                                            parse_mode=ParseMode.MARKDOWN,
+                                            protect_content=True,
+                                            reply_markup=InlineKeyboardMarkup(inline_keyboard=btns))
+                task.sent = True
+                task.message_id = response.message_id
+                task.fact_sending_time = response.date
+                db.session.commit()
+            except Unauthorized:
+                user.set_unsubscribed()
+                task.comment = 'Пользователь отписался'
+                db.session.commit()
+            except AttributeError:
+                print(f'AttributeError user_id={user.id}')
+                task.comment = 'AttributeError'
+                db.session.commit()
+            except:
+                task.comment = 'Ошибка tg_id'
+                db.session.commit()
+
+    db.session.remove()

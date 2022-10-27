@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from app import db
 from app.telegram_bot.routes import get_bot
 from app.admin import bp
-from app.models import User, Group, Tag, UserTag, ScheduledMessage, Prizes
+from app.models import User, Group, Tag, UserTag, ScheduledMessage, Prizes, Quiz
 from app.admin.forms import ChangeWebhookForm, ScheduledMessageCreateForm, SendTGMessageForm, SendGroupTGMessageForm,\
     CreateGroupForm, CreateModerForm, CreateQuestionForm, EditQuizForm, PrizeForm
 from config import Config
@@ -41,13 +41,12 @@ def admin():
         bot_name = Config.BOT_NAME
         title = 'Главная'
         server = Config.SERVER
-        placement: Placement.query.filter(Placement.id == 1).first()
-        print(placement)
+        # placement: Placement.query.filter(Placement.id == 1).first()
+        # print(placement)
         return render_template('main/with-map.html',
                                bot_name=bot_name,
                                title=title,
                                server=server,
-                               placement=placement,
                                )
 
 
@@ -76,7 +75,9 @@ def message_schedule():
         create_task_form = ScheduledMessageCreateForm()
         create_task_form.group.choices = [('', 'выбрать группу')] + [(str(x.id), x.name) for x in Group.query.all()]
         scheduled_messages = ScheduledMessage.query.order_by(ScheduledMessage.date_time).all()
+
         if create_task_form.validate_on_submit():
+            bot = get_bot()
             task = ScheduledMessage()
             task.message_type = create_task_form.message_type.data
             task.date_time = create_task_form.date_time.data
@@ -124,7 +125,6 @@ def message_schedule():
                                title='Предустановленные сообщения',
                                form=create_task_form,
                                scheduled_messages=scheduled_messages)
-
 
     else:
         return redirect(url_for('main.index'))
@@ -603,3 +603,49 @@ def give_prize(nid):
                      reply_to_message_id=n.message_id,
                      parse_mode=ParseMode.MARKDOWN)
     return redirect(request.referrer)
+
+@bp.route('/test_send_task_<id>')
+async def test_send_task(id):
+    task = ScheduledMessage.query.get(id)
+    text = task.text
+    bot = get_bot()
+    if task.message_type == 'photo':
+        await bot.send_photo(chat_id=current_user.tg_id,
+                       photo=task.content_link,
+                       caption=text,
+                       parse_mode=ParseMode.MARKDOWN)
+    elif task.message_type == 'text':
+        await bot.send_message(chat_id=current_user.tg_id,
+                         text=text,
+                         parse_mode=ParseMode.MARKDOWN,
+                         disable_web_page_preview=False)
+    elif task.message_type == 'video':
+        await bot.send_video(chat_id=current_user.tg_id,
+                       video=task.content_link,
+                       caption=text,
+                       parse_mode=ParseMode.MARKDOWN)
+    elif task.message_type == 'poll':
+        send_quiz_start(quiz_id=int(text), users=[current_user])
+
+    db.session.remove()
+    return redirect(url_for('admin.message_schedule'))
+
+
+def send_quiz_start(quiz_id, users):
+    quiz = Quiz.query.get(quiz_id)
+    buttons = [
+        {
+            'text': 'Начинаем',
+            'data': f'startQuiz_{quiz_id}'
+        }
+    ]
+    map = create_button_map(buttons, 1)
+    reply_markup = get_inline_menu(map)
+    for user in users:
+        bot.send_message(chat_id=user.tg_id,
+                         text=quiz.description,
+                         reply_markup=reply_markup,
+                         parse_mode='Markdown')
+        user.status = f'playQuiz_{quiz.id}_0'
+        db.session.commit()
+        return 'ok'
